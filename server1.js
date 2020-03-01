@@ -35,13 +35,36 @@ function handle(request, response) {
 }
 
 async function sendPage(filePath, response) {
-  var content = await FS.readFileSync("./" + filePath);
+  var content = await FS.readFileSync("./" + filePath, "utf8");
+  var templateMap = {};
+  if (filePath == "index.html") {
+    var time = (new Date()).toDateString();
+    templateMap["time"] = time;
+  }
+  content = template(content, templateMap);
   console.log("Content: " + content);
   reply(response, content, 'text/html');
 }
 
+//takes the page content string and a map of variable names to values
+//returns the same content with the names changed to values
+function template(content, templateMap) {
+  var i = content.indexOf("${");
+  while(i != -1) {
+    var end = content.indexOf("}");
+    if (end != -1) {
+      var key = content.substring(i + 2, end)
+      if (templateMap[key]) {
+        content = content.split("${" + key + "}").join(templateMap[key]);
+      }
+    }
+    i = content.indexOf("${");
+  }
+  return content;
+}
+
 async function sendFile(filePath, response, mimeType) {
-  var content = await FS.readFileSync("./" + filePath);
+  var content = await FS.readFileSync("./" + filePath, "utf8");
   reply(response, content, mimeType);
 }
 
@@ -53,9 +76,4 @@ function reply(response, content, mimeType) {
   response.writeHead(200, hdrs);  // 200 = OK
   response.write(content);
   response.end();
-}
-
-
-function getFileExtension(filename) {
-  return filename.split(".").pop();
 }
