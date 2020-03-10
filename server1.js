@@ -6,11 +6,13 @@ start(8080);
 
 var pageMap = {
   "/":"index.html",
-  "/test":"test.txt"
+  "/test":"test.txt",
+  "/style.css":"style.css"
 }
 
 // Provide a service to localhost only.
 function start(port) {
+  console.log("css mimetype = " + mime.contentType("style.css"));
   let service = HTTP.createServer(handle);
   service.listen(port, 'localhost');
 }
@@ -24,12 +26,13 @@ function handle(request, response) {
   var file = pageMap[request.url];
   console.log("Filename found: " + file);
   if (file) {
-    var type = mime.lookup(file);
-    if (type = "text/html") {
+    var type = mime.contentType(file);
+    console.log("Content-Type: " + type);
+    if (type.includes("text/html")) {
       sendPage(file, response);
     }
     else {
-      sendFile(file, response, mimeType);
+      sendFile(file, response, type);
     }
   }
 }
@@ -71,7 +74,6 @@ async function sendFile(filePath, response, mimeType) {
 
 // Send a reply.
 function reply(response, content, mimeType) {
-  console.log("Content-Type: " + mimeType);
   let hdrs = { 'Content-Type': mimeType };
   response.writeHead(200, hdrs);  // 200 = OK
   response.write(content);
