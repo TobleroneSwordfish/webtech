@@ -14,42 +14,75 @@
 </ul>
 <h1>hmm yes</h1>
 <p>The current time and date is ${time} oh gods the end draws near we are all such brief mortals</p>
-<p id="jsondump">
+<p id="jsondump"></p>
+<p>
+  Overall HSR:
+  <div id="HSR"></div>
+</p>
+<p>
+  Infantry only HSR:
+  <div id="infantryHSR"></div>
+</p>
 <script>
   "use strict"
   fetch("http://census.daybreakgames.com/s:jtwebtech/get/ps2/character").then(handle);
   function handle(response) {
-    //console.log(response);
     response.json().then(fill)
   }
   function fill(data) {
-    //console.log(data);
-    
     document.body.querySelector("#jsondump").innerHTML = JSON.stringify(data);
   }
 </script>
 
 <script>
+  "use strict"
   var serviceID = "s:jtwebtech"
   let socket = new WebSocket("wss://push.planetside2.com/streaming?environment=ps2&service-id=" + serviceID);
   socket.onmessage = handle;
   socket.onopen = start;
+
   var msgCount = 0;
+  var killCount = 0;
+  var headshots = 0;
+  var infantryKills = 0;
+  var infantryHeadshots = 0;
+
   function handle(event) {
-    console.log(event.data);
+    //console.log(event.data);
     msgCount++;
-    if (msgCount > 100) {
-      socket.close();
+    var jsonData = JSON.parse(event.data);
+    console.log(jsonData);
+    //ignore heartbeat messages
+    if (jsonData.type == "heartbeat") {
+      return
+    }
+    else if (jsonData.type == "serviceMessage") { //all useful data comes via service messages
+      if (jsonData.payload.event_name == "Death") { //someone dieded
+        killCount++;
+        if (jsonData.payload.attacker_vehicle_id == 0) { //the attacker was not in a vehicle
+          infantryKills++;
+        }
+        if (jsonData.payload.is_headshot == 1) { //it was a headshot
+          headshots++;
+          if (jsonData.payload.attacker_vehicle_id == 0) { //the attacker was not in a vehicle
+            infantryHeadshots++;
+          }
+        }
+        document.body.querySelector("#HSR").innerHTML = headshots / killCount;
+        document.body.querySelector("#infantryHSR").innerHTML = infantryHeadshots / infantryKills;
+      }
     }
   }
+
   function start(e) {
     //subscribe to all death events from world ID 1 (connery server)
+    //var 
     socket.send(JSON.stringify({
 	    "service":"event",
       "action":"subscribe",
       "characters":["all"],
       "worlds":["1"],
-      "eventNames":["Death"]
+      "eventNames":["PlayerFacilityCapture"]
     }));
   }
 </script>

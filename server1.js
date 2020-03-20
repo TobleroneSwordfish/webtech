@@ -2,6 +2,7 @@
 let HTTP = require('http');
 let FS = require("fs");
 let mime = require("mime-types");
+let mysql = require("mysql");
 start(8080);
 
 var pageMap = {
