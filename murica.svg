@@ -11,13 +11,13 @@
    xmlns:xlink="http://www.w3.org/1999/xlink"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="210mm"
-   height="297mm"
-   viewBox="0 0 210 297"
+   width="198.00392mm"
+   height="187.47879mm"
+   viewBox="0 0 198.00392 187.47879"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.4 (5da689c313, 2019-01-14)"
-   sodipodi:docname="drawing.svg"
+   sodipodi:docname="murica.svg"
    inkscape:export-filename="C:\Users\Theano\Desktop\webtech\drawing.png"
    inkscape:export-xdpi="960.01465"
    inkscape:export-ydpi="960.01465">
@@ -284,7 +284,7 @@
        fuse_paths="false"
        oposite_fuse="false" />
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter7359">
       <feFlood
@@ -316,7 +316,7 @@
          id="feComposite7357" />
     </filter>
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter7371">
       <feFlood
@@ -443,7 +443,7 @@
        y2="114.31133"
        gradientUnits="userSpaceOnUse" />
     <filter
-       style="color-interpolation-filters:sRGB;"
+       style="color-interpolation-filters:sRGB"
        inkscape:label="Drop Shadow"
        id="filter9385">
       <feFlood
@@ -511,10 +511,10 @@
        inkscape:collect="always"
        xlink:href="#linearGradient9405"
        id="radialGradient9407"
-       cx="366.44869"
-       cy="256.29768"
-       fx="366.44869"
-       fy="256.29768"
+       cx="366.4487"
+       cy="256.29767"
+       fx="366.4487"
+       fy="256.29767"
        r="43.965839"
        gradientTransform="matrix(1,0,0,0.94684384,0,13.623801)"
        gradientUnits="userSpaceOnUse" />
@@ -524,10 +524,10 @@
        id="radialGradient9413"
        gradientUnits="userSpaceOnUse"
        gradientTransform="matrix(1,0,0,0.94684384,0,13.623801)"
-       cx="366.44869"
-       cy="256.29768"
-       fx="366.44869"
-       fy="256.29768"
+       cx="366.4487"
+       cy="256.29767"
+       fx="366.4487"
+       fy="256.29767"
        r="43.965839" />
   </defs>
   <sodipodi:namedview
@@ -538,8 +538,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.5"
-     inkscape:cx="217.38914"
-     inkscape:cy="543.18143"
+     inkscape:cx="211.61707"
+     inkscape:cy="261.68314"
      inkscape:document-units="mm"
      inkscape:current-layer="layer1"
      showgrid="false"
@@ -565,17 +565,19 @@
   <g
      inkscape:groupmode="layer"
      id="layer3"
-     inkscape:label="Layer 0" />
+     inkscape:label="Layer 0"
+     transform="translate(-4.9828583,-33.453952)" />
   <g
      inkscape:label="Layer 1"
      inkscape:groupmode="layer"
-     id="layer1">
-    <ellipse
-       style="fill:url(#linearGradient7469);fill-opacity:1;stroke:url(#linearGradient7479);stroke-width:1.708;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
+     id="layer1"
+     transform="translate(-4.9828583,-33.453952)">
+    <circle
+       style="fill:url(#linearGradient7469);fill-opacity:1;stroke:url(#linearGradient7479);stroke-width:1.70799994;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path7403"
        cy="129.98177"
        cx="95.084633"
-       r="17.363281" />
+       r="0" />
     <circle
        style="opacity:1;fill:url(#linearGradient9210);fill-opacity:1;stroke:none;stroke-width:1.9096123;stroke-miterlimit:4;stroke-dasharray:none;stroke-opacity:1"
        id="path7495-7"
@@ -584,7 +586,7 @@
        r="0" />
     <g
        id="g9433"
-       transform="translate(-196.32083,-90.752084)">
+       transform="matrix(2.2517928,0,0,2.2517928,-575.80971,-401.08141)">
       <g
          transform="translate(-64.558333,-21.695833)"
          id="g9411">
