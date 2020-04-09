@@ -2,6 +2,10 @@
     width:100%;
     height:
 } */
+.body {
+    max-width: 100%;
+}
+
 ul.navbar {
     background-color: #666699;
     list-style-type: none;
@@ -31,4 +35,59 @@ ul.navbar li a {
 }
 ul.navbar li a:hover {
     background-color: darkseagreen;
+}
+
+.logo {
+    /* transform: scale(0.5); */
+    max-width:30%;
+    display: inline-block;
+    position: relative;
+    /* position: relative; */
+}
+
+.logo-img {
+    max-width: 100%;
+}
+
+.expanded {
+    z-index: 2000;
+    transform: scale(2.1);
+}
+
+.expand {
+    z-index: 2000;
+    animation-name: expand;
+    animation-duration: 1.5s;
+    animation-direction: normal;
+    animation-fill-mode: forwards;
+}
+.contract {
+    z-index: 2000;
+    animation-name: expand;
+    animation-duration: 1.5s;
+    animation-direction: reverse;
+    animation-fill-mode: forwards;
+}
+
+@keyframes expand {
+    from {
+        transform: scale(1);
+    }
+    to {
+        transform: scale(2.1);
+    }
+}
+
+.top-left {
+    position: absolute;
+    top: 8px;
+    left: 16px;
+}
+.hidden {
+    visibility: hidden;
+}
+
+.faction-info {
+    width:100%;
+    word-wrap: break-word;
 }

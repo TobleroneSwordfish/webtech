@@ -8,12 +8,14 @@ start(8080);
 var pageMap = {
   "/":"index.html",
   "/test":"test.txt",
-  "/style.css":"style.css"
+  "/style.css":"style.css",
+  "/VSlogo.svg":"aliens.svg",
+  "/TRlogo.svg":"sword.svg",
+  "/NClogo.svg":"murica.svg"
 }
 
 // Provide a service to localhost only.
 function start(port) {
-  console.log("css mimetype = " + mime.contentType("style.css"));
   let service = HTTP.createServer(handle);
   service.listen(port, 'localhost');
 }
@@ -22,7 +24,7 @@ function start(port) {
 function handle(request, response) {
   console.log("Method:", request.method);
   console.log("URL:", request.url);
-  console.log("Headers:", request.headers);
+  //console.log("Headers:", request.headers);
 
   var file = pageMap[request.url];
   console.log("Filename found: " + file);
@@ -36,6 +38,7 @@ function handle(request, response) {
       sendFile(file, response, type);
     }
   }
+  console.log();
 }
 
 async function sendPage(filePath, response) {
@@ -55,12 +58,15 @@ async function sendPage(filePath, response) {
 function template(content, templateMap) {
   var i = content.indexOf("${");
   while(i != -1) {
-    var end = content.indexOf("}");
+    var end = content.indexOf("}", i);
     if (end != -1) {
       var key = content.substring(i + 2, end)
       if (templateMap[key]) {
         content = content.split("${" + key + "}").join(templateMap[key]);
       }
+    }
+    else {
+      break;
     }
     i = content.indexOf("${");
   }

@@ -12,6 +12,78 @@
   <li><a href="/datapage.html">Data page</a></li>
   <li><a href="/about.html">About</a></li>
 </ul>
+<div class="container horizontal" style="width: 60%; margin-left: 20%;">
+  <div class="container logo" style="transform-origin: top left;">
+    <img src="/VSlogo.svg" class="logo-img">
+    <div class="top-left faction-info hidden">ahahahhahahatext</div>
+  </div>
+  <div class="container logo" style="transform-origin: top center;">
+    <img src="/NClogo.svg" class="logo-img">
+  </div>
+  <div class="container logo" style="transform-origin: top right;">
+    <img src="/TRlogo.svg" class="logo-img">
+  </div>
+</div>
+<script>
+  "use strict"
+  addEventListener("load", setup);
+  var logos;
+  function setup() {
+    logos = Array.from(document.querySelectorAll(".logo"));
+    for (var i = 0; i < logos.length; i++) {
+      logos[i].addEventListener("click",  expand);
+      logos[i].addEventListener("animationend", animEnd);
+    }
+  }
+  //adds or removes the "hidden" class on child objects of node that have class objClass according to state
+  function toggleHidden(node, objClass, state) {
+    var nodes = node.getElementsByClassName(objClass)
+    if (nodes != null) {
+      for (var i = 0; i < nodes.length; i++) {
+        if (state) {
+          nodes[i].classList.add("hidden")
+        }
+        else {
+          nodes[i].classList.remove("hidden")
+        }
+      }
+    }
+  }
+
+  //make sure no other logo is expanded or currently animating
+  const checkActive = (logo) => !logo.classList.contains("expand") && !logo.classList.contains("contract") && !logo.classList.contains("expanded")
+  //expands
+  function expand(event) {
+    if (this.classList.contains("expanded")) { //is already expanded
+      this.classList.remove("expanded");
+      this.classList.add("contract"); //start contracting
+    } 
+    
+    else if (logos.every(checkActive)) {
+      for (var i = 0; i < logos.length; i++) {
+        if (logos[i].classList.contains("expanded") || logos[i].classList.contains("expand")) {
+          logos[i].classList.remove("expanded");
+          logos[i].classList.remove("expand");
+          logos[i].classList.add("contract");
+        }
+      }
+      toggleHidden(this, "faction-info", false)
+      this.classList.add("expand");
+    }
+  }
+
+  function animEnd(event) {
+    console.log(event);
+    if (this.classList.contains("contract")) {
+      this.classList.remove("contract");
+      toggleHidden(this, "faction-info", true)
+    }
+    if (this.classList.contains("expand")) {
+      this.classList.remove("expand");
+      this.classList.add("expanded");
+    }
+  }
+</script>
 <h1>hmm yes</h1>
 <p>The current time and date is ${time} oh gods the end draws near we are all such brief mortals</p>
 <p id="jsondump"></p>
