@@ -119,6 +119,8 @@
   var infantryKills = 0;
   var infantryHeadshots = 0;
 
+  var factions = ["", "Vanu Sovereignty", "New Conglomerate", "Terran Republic"];
+
   function handle(event) {
     //console.log(event.data);
     msgCount++;
@@ -143,19 +145,42 @@
         document.body.querySelector("#HSR").innerHTML = headshots / killCount;
         document.body.querySelector("#infantryHSR").innerHTML = infantryHeadshots / infantryKills;
       }
+      else if (jsonData.payload.event_name == "FacilityControl") {
+        getFacility(jsonData);
+      }
     }
+  }
+
+  function getFacility(jsonData) {
+    var url = "http://census.daybreakgames.com/" + serviceID +"/get/ps2:v2/map_region/?facility_id=" + jsonData.payload.facility_id;
+    console.log(url);
+    fetch(url).then((response) => printFacility(response, jsonData.payload.new_faction_id))
+  }
+  function printFacility(response, faction_id) {
+    response.json().then((json) => {
+      var data = json.map_region_list[0];
+      console.log(data.facility_name + " " + data.facility_type + " was captured by faction " + factions[faction_id]);
+    });
   }
 
   function start(e) {
     //subscribe to all death events from world ID 1 (connery server)
-    //var 
-    socket.send(JSON.stringify({
+    var deathJSON = {
 	    "service":"event",
       "action":"subscribe",
       "characters":["all"],
       "worlds":["1"],
-      "eventNames":["PlayerFacilityCapture"]
-    }));
+      "eventNames":["Death"]
+    }
+    var controlJSON = {
+	    "service":"event",
+      "action":"subscribe",
+      "characters":["all"],
+      "worlds":["all"],
+      "eventNames":["FacilityControl"]
+    }
+    var revive
+    socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
   }
 </script>
 </body>
