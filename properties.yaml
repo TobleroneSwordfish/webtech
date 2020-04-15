@@ -1,2 +1,3 @@
 password: "swordfish"
-endpoint: "root@localhost:3306"
+host: "localhost"
+user: "root"

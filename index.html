@@ -15,7 +15,7 @@
 <div class="container horizontal" style="width: 60%; margin-left: 20%;">
   <div class="container logo" style="transform-origin: top left;">
     <img src="/VSlogo.svg" class="logo-img">
-    <div class="top-left faction-info hidden">ahahahhahahatext</div>
+    <div class="top-left faction-info hidden">teeeeeeeext</div>
   </div>
   <div class="container logo" style="transform-origin: top center;">
     <img src="/NClogo.svg" class="logo-img">
@@ -85,7 +85,22 @@
   }
 </script>
 <h1>hmm yes</h1>
-<p>The current time and date is ${time} oh gods the end draws near we are all such brief mortals</p>
+<p>The current time and date is ${time}</p>
+
+<p id=resurrections></p>
+<script>
+  "use strict"
+  fetch("/?res=yes").then(handleRessurections);
+  function handleRessurections(response) {
+    console.log(response)
+    response.text().then(fillRessurections)
+  }
+  function fillRessurections(data) {
+    document.body.querySelector("#resurrections").innerHTML = data;
+  }
+</script> 
+
+
 <p id="jsondump"></p>
 <p>
   Overall HSR:
@@ -179,7 +194,7 @@
       "worlds":["all"],
       "eventNames":["FacilityControl"]
     }
-    var revive
+    var revive=1;
     socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
   }
 </script>

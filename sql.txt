@@ -1,1 +1,2 @@
-CREATE TABLE characters (id BIGINT PRIMARY KEY, suicides INT, teamkills INT, healing_xp_gained INT, revive_xp_ganed INT, faction_id BIGINT, last_login TIMESTAMP);
+drop table if exists characters;
+CREATE TABLE characters (id BIGINT PRIMARY KEY, username VARCHAR(100),suicides INT, teamkills INT, healing_ticks INT, resurrections INT, times_revived INT, faction_id BIGINT, last_login TIMESTAMP);
