@@ -5,25 +5,44 @@ let mime = require("mime-types");
 let mysql = require("mysql");
 let fetch = require("node-fetch");
 let yaml = require('js-yaml');
-let fs   = require('fs');
+let fs = require('fs');
+let formidable = require('formidable');
+let path = require('path');
 const WebSocket = require('ws');
 
-
+//database connection, global because passing it around seems pointless
 var con;
 
+//daybreak API ID
 var serviceID = "s:jtwebtech"
 
+//start the HTTP server
 start_server(8080);
+//connect to the mySQL server using the credentials from the properties file
 connect_db(read_yaml());
+//subscribe to the exp gained events from the API
 request_exp();
 
 var pageMap = {
   "/":"index.html",
+  "/fanart":"fanart.html",
   "/test":"test.txt",
   "/style.css":"style.css",
+  "/fanart.css":"fanart.css",
   "/VSlogo.svg":"aliens.svg",
   "/TRlogo.svg":"sword.svg",
   "/NClogo.svg":"murica.svg"
+}
+
+loadImages();
+
+var fanart = [];
+
+async function loadImages() {
+  fanart = await fs.readdirSync("./Fanart");
+  fanart.forEach(function(value, index, array) {
+    pageMap["/" + value] = "Fanart" + path.sep + value;
+  });
 }
 
 // Provide a service to localhost only.
@@ -100,7 +119,7 @@ function create_character(id){
   var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + "&c:show=name";
   fetch(requestString).then( function (result) {
     result.json().then(function (jsonData) {
-      console.log(jsonData)
+      //console.log(jsonData)
       //for some reason this is the best way to do duplicate safe insertion
       var sql = "INSERT INTO characters(id, username) VALUES (" + id + ",'" + jsonData.character_list[0].name.first +"') ON DUPLICATE KEY UPDATE id=id;";
       con.query(sql, function (err, result) {
@@ -126,38 +145,62 @@ function handle(request, response) {
   console.log("URL:", request.url);
   console.log("Params: ", params)
 
-  //check if the requested URL maps to a file
-  var file = pageMap[request.url];
-  if (file) {
-    console.log("Filename found: " + file);
-    var type = mime.contentType(file);
-    console.log("Content-Type: " + type);
-    //if it's an HTML page, send it off for templating
-    if (type.includes("text/html")) {
-      send_page(file, response);
-    }
-    else { //otherwise just send the file
-      send_file(file, response, type);
-    }
+  if (request.method == "GET") {
+    handle_get(request, response, params)
   }
-  //reflect request on to the daybreak API
-  else if (request.url.startsWith("/api/")){
-    call_api(request,response);
-  }
-
-  console.log();
-  //client has requested the 10 characters with the most resurrections
-  if ("res" in params){
-    var thing = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
-    con.query(thing, function (err, result) {
-      //build a string from the SQL result array
-      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ")
-      reply(response, content, "text/plain")
-      if (err) throw err;
-    });
+  else if (request.method == "POST") {
+    handle_post(request, response, params)
   }
 }
 
+function handle_get(request, response, params) {
+    //check if the requested URL maps to a file
+    var file = pageMap[request.url];
+    if (file) {
+      console.log("Filename found: " + file);
+      var type = mime.contentType(file);
+      console.log("Content-Type: " + type);
+      //if it's an HTML page, send it off for templating
+      if (type.includes("text/html")) {
+        send_page(file, response);
+      }
+      else { //otherwise just send the file
+        send_file(file, response, type);
+      }
+    }
+    //reflect request on to the daybreak API
+    else if (request.url.startsWith("/api/")){
+      call_api(request,response);
+    }
+  
+    console.log();
+    //client has requested the 10 characters with the most resurrections
+    if ("res" in params){
+      var thing = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
+      con.query(thing, function (err, result) {
+        //build a string from the SQL result array
+        var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ")
+        reply(response, content, "text/plain")
+        if (err) throw err;
+      });
+    }
+}
+
+function handle_post(request, response, params) {
+  var url = request.url;
+  if (url == "/fanart") {
+    var form = new formidable.IncomingForm();
+    form.parse(request, parse_fanart);
+    response.writeHead(204);
+    response.end();
+  }
+}
+
+function parse_fanart(err, fields, files) {
+  if (err) throw err;
+  console.log("Files uploaded " + JSON.stringify(files));
+  fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+}
 
 //we may use this one day
 //C# has this as an operator nehhh
@@ -198,6 +241,9 @@ async function send_page(filePath, response) {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;
   }
+  else if (filePath == "fanart.html") {
+    templateMap["images"] = fanart;
+  }
   content = template(content, templateMap);
   // console.log("Content: " + content);
   reply(response, content, 'text/html');
@@ -206,26 +252,82 @@ async function send_page(filePath, response) {
 //takes the page content string and a map of variable names to values
 //returns the same content with the names changed to values
 function template(content, templateMap) {
-  var i = content.indexOf("${");
+  var i = content.indexOf("$");
   while(i != -1) {
-    var end = content.indexOf("}", i);
-    if (end != -1) {
-      var key = content.substring(i + 2, end)
-      if (templateMap[key]) {
-        content = content.split("${" + key + "}").join(templateMap[key]);
+    //basic substitution
+    i++;
+    if (content[i] == '{') {
+      
+      var end = content.indexOf("}", i);
+      if (end != -1) {
+        var key = content.substring(i + 1, end)
+        if (templateMap[key]) {
+          content = content.split("${" + key + "}").join(templateMap[key]);
+        }
+      }
+      else {
+        break;
       }
     }
+    //foreach substitution
+    //currently does now allow for nested foreachs
+    else if (content.substring(i).startsWith("foreach(")) {
+      //console.log("templating foreach");
+      var bracketEnd = content.indexOf(")", i);
+      if (bracketEnd == -1) {
+        console.log("malformed foreach templating at " + i);
+        break;
+      }
+      var inside = content.substring(i + "foreach(".length, bracketEnd).split(" in ");
+      var keyName = inside[0];
+      //console.log("key name = " + keyName);
+      var array = templateMap[inside[1]];
+      //console.log("array = " + array);
+      var end = content.indexOf("endfor", i);
+      if (end == -1) {
+        console.log("malformed foreach templating at " + i);
+        break;
+      }
+      var body = content.substring(bracketEnd + 1, end);
+      //console.log("body: " + body);
+      let newContent = "";
+      array.forEach(function(value, index, array) {
+        //console.log("entering loop");
+        //recurse down to template the body
+        var map = {};
+        map[keyName] = value;
+        var block = template(body, map);
+        //console.log("block = " + block);
+        newContent = newContent.concat(block);
+      });
+      //console.log("new content = " + newContent);
+      //replace the template with the templated blocks
+      content = content.substring(0, i - 1) + newContent + content.substring(end + "endfor".length);
+    }
     else {
+      console.log("lone $ found in templating");
       break;
     }
-    i = content.indexOf("${");
+    i = content.indexOf("$");
   }
+  console.log(content);
   return content;
 }
 
 //just read and send a file normally
 async function send_file(filePath, response, mimeType) {
-  var content = await FS.readFileSync("./" + filePath, "utf8");
+  // var stream = fs.createReadStream("./" + filePath);
+  // stream.on("open", function (fd) {
+  //   stream.pipe(response);
+  //   reply(response, null, mimeType);
+  // })
+  var content
+  if (mimeType.includes("text")) {
+    content = await FS.readFileSync("./" + filePath, "utf8");
+  }
+  else {
+    content = await fs.readFileSync("./" + filePath);
+  }
   reply(response, content, mimeType);
 }
 
@@ -234,6 +336,8 @@ async function send_file(filePath, response, mimeType) {
 function reply(response, content, mimeType) {
   let hdrs = { 'Content-Type': mimeType };
   response.writeHead(200, hdrs);  // 200 = SNAZZY
-  response.write(content);
+  if (content != null) {
+    response.write(content);
+  }
   response.end();
 }
