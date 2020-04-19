@@ -105,7 +105,7 @@ async function try_fetch(url) {
         return resp;
       }
       catch (err) {
-        throw err;
+        return;
       }
     }
     else {
@@ -130,28 +130,28 @@ function subscribe_events(socket) {
 
 async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
-
+  //console.log(jsonData);
   //ignore heartbeat messages
   if (jsonData.type == "heartbeat") {
     return
   }
   else if (jsonData.type == "serviceMessage") {
     var payload = jsonData.payload;
-    console.log("event")
-    return;
     switch (payload.event_name) {
       case "GainExperience":
-        console.log("exp event")
+        console.log(payload.experience_id);
         //revive or squad revive
         if (payload.experience_id == 7 || payload.experience_id == 53) {
           handle_revive(payload);
         }
         //heal, heal assist or squad heal
         else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
-          await create_if_new(payload.attacker_character_id);
+          await create_if_new(payload.character_id);
           var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = " + payload.character_id + ";";
           var resp = await query(sql);
-          console.log(resp);
+        }
+        else {
+          return;
         }
         break;
       case "PlayerLogout":
@@ -163,7 +163,10 @@ async function handle_event_response(event) {
       case "Death":
         handle_death(payload);
         break;
+      default:
+        return;
     }
+    console.log(payload.event_name);
   }
 }
 //returns the date in a format mysql can swallow
@@ -190,6 +193,10 @@ async function handle_death(payload) {
   }
   var victim = await get_character_data(payload.character_id, "faction_id");
   var attacker = await get_character_data(payload.attacker_character_id, "faction_id");
+  if (!(victim && attacker)) {
+    console.log("API cannot find player");
+    return;
+  }
   if (victim.faction_id == attacker.faction_id) {
     await create_if_new(payload.attacker_character_id);
     var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = " + payload.attacker_character_id + ";";
@@ -239,7 +246,11 @@ async function get_character_data(id, ...properties) {
   }
   var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
   //console.log(requestString)
-  var result = await fetch(requestString);
+  var result = await try_fetch(requestString);
+  if (result.status != 200) {
+    console.log("API returned invalid response code");
+    return;
+  }
   var jsonData = await result.json();
   if (jsonData.character_list) {
     return jsonData.character_list[0];
@@ -262,18 +273,19 @@ async function create_character(id){
 }
 
 async function delete_character(id) {
-  var delet = "DELETE FROM characters WHERE id = " + id;
-  var foo = await query(delet);
-  //console.log(foo);
+  var deletChar = "DELETE FROM characters WHERE id = " + id;
+  var deletTKs = "DELETE FROM teamkills WHERE victim_id = " + id + " OR attacker_id = " + id + ";";
+  query(deletChar);
+  query(deletTKs);
 }
 async function character_exists(id) {
-  var results = await query("SELECT COUNT(id) FROM characters WHERE id =" + id);
+  var results = await query("SELECT COUNT(id) FROM characters WHERE id =" + id + ";");
   return results[0]["COUNT(id)"] != 0;
 }
 
 async function call_api(request,response){
   var i=request.url.indexOf("api")+4
-  var apiresponse = await fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
+  var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
   var text = await apiresponse.text()
   reply(response, text, mime.contentType(".json"));
 }
