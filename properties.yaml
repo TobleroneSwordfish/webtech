@@ -1,3 +1,5 @@
 password: "Dolphin"
 host: "localhost"
 user: "root"
+#possible IDs are 1: Connery, 10: Miller, 13: Cobalt, 17: Emerald, 19: Jaeger, 25: Briggs (RIP), 40: SolTech
+world: 19

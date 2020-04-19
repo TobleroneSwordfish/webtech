@@ -194,8 +194,10 @@
       "worlds":["all"],
       "eventNames":["FacilityControl"]
     }
-    var revive=1;
-    socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
+    var expTypes = [7, 53, 4, 5, 51];
+    var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
+    var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
+    socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames }));
   }
 </script>
 </body>

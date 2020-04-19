@@ -8,6 +8,7 @@ let yaml = require('js-yaml');
 let fs = require('fs');
 let formidable = require('formidable');
 let path = require('path');
+let util = require('util');
 const WebSocket = require('ws');
 
 //database connection, global because passing it around seems pointless
@@ -19,9 +20,12 @@ var serviceID = "s:jtwebtech"
 //start the HTTP server
 start_server(8080);
 //connect to the mySQL server using the credentials from the properties file
-connect_db(read_yaml());
+var properties = read_yaml();
+connect_db(properties);
+//set up promisified version of the query method so we can await it
+const query = util.promisify(con.query).bind(con);
 //subscribe to the exp gained events from the API
-request_exp();
+request_events();
 
 var pageMap = {
   "/":"index.html",
@@ -76,17 +80,55 @@ function connect_db(doc){
   })
 }
 
-function request_exp() {
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function try_fetch(url) {
+  try {
+    var resp = await fetch(url);
+    return resp;
+  }
+  catch (err) {
+    if (err.type == "system") {
+      throw err;
+    }
+    else if (error.name == "AbortError") {
+      return;
+    }
+    else if (error.name == "FetchError" && err.code == "ECONNRESET") {
+      await sleep(200);
+      try {
+        var resp = await fetch(url);
+        return resp;
+      }
+      catch (err) {
+        throw err;
+      }
+    }
+    else {
+      throw err;
+    }
+  }
+}
+
+function request_events() {
   let socket = new WebSocket("wss://push.planetside2.com/streaming?environment=ps2&service-id=" + serviceID);
-  socket.onmessage = handle_exp_response;
-  socket.onopen = () => subscribe_exp(socket);  
+  socket.onmessage = handle_event_response;
+  socket.onopen = () => subscribe_events(socket);  
 }
 
-function subscribe_exp(socket) {
-  socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
+function subscribe_events(socket) {
+  var expTypes = [7, 53, 4, 5, 51];
+  var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
+  var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
+  console.log(eventNames);
+  socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
-function handle_exp_response(event) {
+async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
 
   //ignore heartbeat messages
@@ -95,46 +137,145 @@ function handle_exp_response(event) {
   }
   else if (jsonData.type == "serviceMessage") {
     var payload = jsonData.payload;
-    //count all entries with the incoming ID
-    con.query("SELECT COUNT(id) FROM characters WHERE id =" + payload.character_id , function (err, result) {
-      if (err) throw err;
-      //console.log(result[0]["COUNT(id)"])
-      //result is a array of objects, so this ensues
-      if (result[0]["COUNT(id)"]==0) {
-        //character does not exist so we create it
-        create_character(payload.character_id);
-      }
-    })
-    //actually increase the resurrections count
-    var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-    })
+    console.log("event")
+    return;
+    switch (payload.event_name) {
+      case "GainExperience":
+        console.log("exp event")
+        //revive or squad revive
+        if (payload.experience_id == 7 || payload.experience_id == 53) {
+          handle_revive(payload);
+        }
+        //heal, heal assist or squad heal
+        else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
+          await create_if_new(payload.attacker_character_id);
+          var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = " + payload.character_id + ";";
+          var resp = await query(sql);
+          console.log(resp);
+        }
+        break;
+      case "PlayerLogout":
+        delete_character(payload.character_id);
+        break;
+      case "PlayerLogin":
+        handle_login(payload);
+        break;
+      case "Death":
+        handle_death(payload);
+        break;
+    }
+  }
+}
+//returns the date in a format mysql can swallow
+function sql_timestamp(date) {
+  var string = date.toISOString();
+  var split = string.split("T");
+  var dateString = split[0];
+  var timeString = split[1].split(".")[0]
+  return dateString + " " + timeString;
+}
+
+async function handle_login(payload) {
+  await create_if_new(payload.character_id);
+  var sql = "UPDATE characters SET last_login = '" + sql_timestamp(new Date()) + "' WHERE id = " + payload.character_id + ";";
+  query(sql);
+}
+
+async function handle_death(payload) {
+  if (payload.character_id == payload.attacker_character_id) {
+    await create_if_new(payload.attacker_character_id);
+    var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = " + payload.character_id + ";";
+    query(suicide);
+    return;
+  }
+  var victim = await get_character_data(payload.character_id, "faction_id");
+  var attacker = await get_character_data(payload.attacker_character_id, "faction_id");
+  if (victim.faction_id == attacker.faction_id) {
+    await create_if_new(payload.attacker_character_id);
+    var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = " + payload.attacker_character_id + ";";
+    query(updateCount);
+    var clearTKs = "DELETE FROM teamkills WHERE victim_id = " + payload.character_id + ";";
+    await query(clearTKs);
+    var insertTK =  "INSERT INTO teamkills (victim_id, attacker_id) VALUES (" + payload.character_id + ", " + payload.attacker_character_id + ");";
+    query(insertTK);
+  }
+}
+
+async function handle_revive(payload) {
+  // console.log("revive received");
+  await create_if_new(payload.character_id);
+  await create_if_new(payload.other_id);
+  //actually increase the resurrections count
+  var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
+  query(sql);
+  sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
+  query(sql);
+  //check if this is a forgiveness revive
+  var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
+  var result = await query(getTKs);
+  if (result[0]["COUNT(1)"] > 0) {
+    var getName = "SELECT username FROM characters WHERE id = ";
+    var victimName = await query(getName + payload.other_id + ";");
+    var attackerName = await query(getName + payload.character_id + ";");
+    console.log(attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.");
+    var forgive = "DELETE FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
+    query(forgive);
+  }
+}
+
+//creates a new character entry only if that character does not exist in the database
+async function create_if_new(id) {
+  var exists = await character_exists(id);
+  if (!exists) {
+    await create_character(id);
+  }
+}
+
+async function get_character_data(id, ...properties) {
+  var params = "";
+  if (properties) {
+    params = "&c:show=";
+    params += properties.join("&c:show=");
+  }
+  var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
+  //console.log(requestString)
+  var result = await fetch(requestString);
+  var jsonData = await result.json();
+  if (jsonData.character_list) {
+    return jsonData.character_list[0];
   }
 }
 
 //duplicate safe function to create a character entry from their id
-function create_character(id){
-  //request username
-  var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + "&c:show=name";
-  fetch(requestString).then( function (result) {
-    result.json().then(function (jsonData) {
-      //console.log(jsonData)
-      //for some reason this is the best way to do duplicate safe insertion
-      var sql = "INSERT INTO characters(id, username) VALUES (" + id + ",'" + jsonData.character_list[0].name.first +"') ON DUPLICATE KEY UPDATE id=id;";
-      con.query(sql, function (err, result) {
-        if (err) throw err;
-      })
-    })
-  });
+async function create_character(id){
+  //request username and faction id from the api
+  var character = await get_character_data(id, "name", "faction_id");
+  if (!character) {
+    //console.log("character does not exist")
+  }
+  else {
+    //console.log(character);
+    //for some reason this is the best way to do duplicate safe insertion
+    var sql = "INSERT INTO characters(id, username, faction_id) VALUES (" + id + ",'" + character.name.first +"'," + character.faction_id + ") ON DUPLICATE KEY UPDATE id=id;";
+    await query(sql);
+  }
 }
 
-function call_api(request,response){
+async function delete_character(id) {
+  var delet = "DELETE FROM characters WHERE id = " + id;
+  var foo = await query(delet);
+  //console.log(foo);
+}
+async function character_exists(id) {
+  var results = await query("SELECT COUNT(id) FROM characters WHERE id =" + id);
+  return results[0]["COUNT(id)"] != 0;
+}
+
+async function call_api(request,response){
   var i=request.url.indexOf("api")+4
-  fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i)).then(handle);
-  function handle(apiresponse) {
-    apiresponse.text().then( (text) => reply(response, text, mime.contentType(".json")));  
-  }
+  var apiresponse = await fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
+  var text = await apiresponse.text()
+  reply(response, text, mime.contentType(".json"));
 }
 
 //main HTTP handle function
@@ -153,7 +294,7 @@ function handle(request, response) {
   }
 }
 
-function handle_get(request, response, params) {
+async function handle_get(request, response, params) {
     //check if the requested URL maps to a file
     var file = pageMap[request.url];
     if (file) {
@@ -176,13 +317,11 @@ function handle_get(request, response, params) {
     console.log();
     //client has requested the 10 characters with the most resurrections
     if ("res" in params){
-      var thing = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
-      con.query(thing, function (err, result) {
-        //build a string from the SQL result array
-        var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ")
-        reply(response, content, "text/plain")
-        if (err) throw err;
-      });
+      var sql = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
+      var result = await query(sql);
+      //build a string from the SQL result array
+      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ");
+      reply(response, content, "text/plain");
     }
 }
 
