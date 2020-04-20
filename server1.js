@@ -27,6 +27,10 @@ const query = util.promisify(con.query).bind(con);
 //subscribe to the exp gained events from the API
 request_events();
 
+var notifications = [];
+var lastNotificationId = 0;
+add_notification("test notification", -1);
+
 var pageMap = {
   "/":"index.html",
   "/fanart":"fanart.html",
@@ -114,6 +118,7 @@ async function try_fetch(url) {
   }
 }
 
+//subscribe to census API events
 function request_events() {
   let socket = new WebSocket("wss://push.planetside2.com/streaming?environment=ps2&service-id=" + serviceID);
   socket.onmessage = handle_event_response;
@@ -128,6 +133,7 @@ function subscribe_events(socket) {
   socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
+//handle an event sent by the API
 async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
   //console.log(jsonData);
@@ -185,6 +191,7 @@ async function handle_login(payload) {
 }
 
 async function handle_death(payload) {
+  //death was suicide
   if (payload.character_id == payload.attacker_character_id) {
     await create_if_new(payload.attacker_character_id);
     var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = " + payload.character_id + ";";
@@ -197,6 +204,7 @@ async function handle_death(payload) {
     console.log("API cannot find player");
     return;
   }
+  //death was teamkill
   if (victim.faction_id == attacker.faction_id) {
     await create_if_new(payload.attacker_character_id);
     var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = " + payload.attacker_character_id + ";";
@@ -224,7 +232,9 @@ async function handle_revive(payload) {
     var getName = "SELECT username FROM characters WHERE id = ";
     var victimName = await query(getName + payload.other_id + ";");
     var attackerName = await query(getName + payload.character_id + ";");
-    console.log(attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.");
+    var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
+    console.log(text);
+    add_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
     query(forgive);
   }
@@ -238,6 +248,8 @@ async function create_if_new(id) {
   }
 }
 
+//wrapper for a request to the census API to get character data
+//list of possible properties can be found here: http://census.daybreakgames.com/get/ps2/
 async function get_character_data(id, ...properties) {
   var params = "";
   if (properties) {
@@ -248,7 +260,7 @@ async function get_character_data(id, ...properties) {
   //console.log(requestString)
   var result = await try_fetch(requestString);
   if (result.status != 200) {
-    console.log("API returned invalid response code");
+    console.log("API returned invalid response code " + result.status);
     return;
   }
   var jsonData = await result.json();
@@ -283,6 +295,7 @@ async function character_exists(id) {
   return results[0]["COUNT(id)"] != 0;
 }
 
+//reflect a received API request on to the census API
 async function call_api(request,response){
   var i=request.url.indexOf("api")+4
   var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
@@ -325,6 +338,9 @@ async function handle_get(request, response, params) {
     else if (request.url.startsWith("/api/")){
       call_api(request,response);
     }
+    else if (request.url.startsWith("/notifications")) {
+      reply(response, JSON.stringify(notifications), "text/json");
+    }
   
     console.log();
     //client has requested the 10 characters with the most resurrections
@@ -342,9 +358,25 @@ function handle_post(request, response, params) {
   if (url == "/fanart") {
     var form = new formidable.IncomingForm();
     form.parse(request, parse_fanart);
-    response.writeHead(204);
+    response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
   }
+}
+
+function add_notification(text, timeout) {
+  var notification = {};
+  notification.text = text;
+  notification.id = lastNotificationId++;
+  notification.timestamp = new Date();
+  notifications.push(notification);
+  if (timeout >= 0) {
+    remove_notification(notification.id, timeout * 1000);
+  }
+}
+
+async function remove_notification(id, timeout) {
+  await sleep(timeout);
+  notifications = notifications.filter((n) => n.id != id);
 }
 
 function parse_fanart(err, fields, files) {
@@ -355,6 +387,7 @@ function parse_fanart(err, fields, files) {
 
 //we may use this one day
 //C# has this as an operator nehhh
+//actually I'm pretty sure JS does too: ??
 function isnull(a,b){
   if (a==null){
     return b;
