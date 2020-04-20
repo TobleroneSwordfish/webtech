@@ -1,6 +1,5 @@
 "use strict"
 let HTTP = require('http');
-let FS = require("fs");
 let mime = require("mime-types");
 let mysql = require("mysql");
 let fetch = require("node-fetch");
@@ -17,6 +16,10 @@ var con;
 //daybreak API ID
 var serviceID = "s:jtwebtech"
 
+//websocket server to send notifications to clients
+var wss;
+var notification_clients = [];
+
 //start the HTTP server
 start_server(8080);
 //connect to the mySQL server using the credentials from the properties file
@@ -26,10 +29,6 @@ connect_db(properties);
 const query = util.promisify(con.query).bind(con);
 //subscribe to the exp gained events from the API
 request_events();
-
-var notifications = [];
-var lastNotificationId = 0;
-add_notification("test notification", -1);
 
 var pageMap = {
   "/":"index.html",
@@ -56,7 +55,27 @@ async function loadImages() {
 // Provide a service to localhost only.
 function start_server(port) {
   let service = HTTP.createServer(handle);
+  wss = new WebSocket.Server({server: service});
+  wss.on("connection", wss_connection);
   service.listen(port, 'localhost');
+}
+
+function wss_connection(ws) {
+  notification_clients.push(ws);
+  ws.on("close", client_close);
+}
+
+function client_close(ws) {
+  notification_clients = notification_clients.splice(notification_clients.indexOf(ws), 1);
+}
+
+function send_notification(text) {
+  var notification = {};
+  notification.text = text;
+  notification.timestamp = new Date();
+  for (var ws in notification_clients) {
+    ws.send(JSON.stringify(notification));
+  }
 }
 
 function read_yaml() {
@@ -234,7 +253,7 @@ async function handle_revive(payload) {
     var attackerName = await query(getName + payload.character_id + ";");
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
     console.log(text);
-    add_notification(text);
+    send_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
     query(forgive);
   }
@@ -338,9 +357,6 @@ async function handle_get(request, response, params) {
     else if (request.url.startsWith("/api/")){
       call_api(request,response);
     }
-    else if (request.url.startsWith("/notifications")) {
-      reply(response, JSON.stringify(notifications), "text/json");
-    }
   
     console.log();
     //client has requested the 10 characters with the most resurrections
@@ -361,22 +377,6 @@ function handle_post(request, response, params) {
     response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
   }
-}
-
-function add_notification(text, timeout) {
-  var notification = {};
-  notification.text = text;
-  notification.id = lastNotificationId++;
-  notification.timestamp = new Date();
-  notifications.push(notification);
-  if (timeout >= 0) {
-    remove_notification(notification.id, timeout * 1000);
-  }
-}
-
-async function remove_notification(id, timeout) {
-  await sleep(timeout);
-  notifications = notifications.filter((n) => n.id != id);
 }
 
 function parse_fanart(err, fields, files) {
@@ -418,7 +418,7 @@ function parse_parameters(url){
 
 //template and send an HTML page
 async function send_page(filePath, response) {
-  var content = await FS.readFileSync("./" + filePath, "utf8");
+  var content = await fs.readFileSync("./" + filePath, "utf8");
   var templateMap = {};
   //here we add stuff to the template map to be sent to the client
   if (filePath == "index.html") {
@@ -427,6 +427,7 @@ async function send_page(filePath, response) {
   }
   else if (filePath == "fanart.html") {
     templateMap["images"] = fanart;
+    templateMap["test"] = "heh";
   }
   content = template(content, templateMap);
   // console.log("Content: " + content);
@@ -444,7 +445,7 @@ function template(content, templateMap) {
       
       var end = content.indexOf("}", i);
       if (end != -1) {
-        var key = content.substring(i + 1, end)
+        var key = content.substring(i + 1, end);
         if (templateMap[key]) {
           content = content.split("${" + key + "}").join(templateMap[key]);
         }
@@ -476,7 +477,6 @@ function template(content, templateMap) {
       //console.log("body: " + body);
       let newContent = "";
       array.forEach(function(value, index, array) {
-        //console.log("entering loop");
         //recurse down to template the body
         var map = {};
         map[keyName] = value;
@@ -507,7 +507,7 @@ async function send_file(filePath, response, mimeType) {
   // })
   var content
   if (mimeType.includes("text")) {
-    content = await FS.readFileSync("./" + filePath, "utf8");
+    content = await fs.readFileSync("./" + filePath, "utf8");
   }
   else {
     content = await fs.readFileSync("./" + filePath);
