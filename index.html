@@ -9,7 +9,7 @@
 <body>
 <ul class="navbar horizontal">
   <li><a href="/">Home</a></li>
-  <li><a href="/datapage.html">Data page</a></li>
+  <li><a href="/fanart">Fanart</a></li>
   <li><a href="/about.html">About</a></li>
 </ul>
 <div class="container horizontal" style="width: 60%; margin-left: 20%;">
@@ -274,8 +274,10 @@
       "worlds":["all"],
       "eventNames":["FacilityControl"]
     }
-    var revive=1;
-    socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
+    var expTypes = [7, 53, 4, 5, 51];
+    var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
+    var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
+    socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[19],"logicalAndCharactersWithWorlds":true  }));
   }
 </script>
 </body>

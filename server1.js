@@ -5,25 +5,52 @@ let mime = require("mime-types");
 let mysql = require("mysql");
 let fetch = require("node-fetch");
 let yaml = require('js-yaml');
-let fs   = require('fs');
+let fs = require('fs');
+let formidable = require('formidable');
+let path = require('path');
+let util = require('util');
 const WebSocket = require('ws');
 
-
+//database connection, global because passing it around seems pointless
 var con;
 
+//daybreak API ID
 var serviceID = "s:jtwebtech"
 
+//start the HTTP server
 start_server(8080);
-connect_db(read_yaml());
-request_exp();
+//connect to the mySQL server using the credentials from the properties file
+var properties = read_yaml();
+connect_db(properties);
+//set up promisified version of the query method so we can await it
+const query = util.promisify(con.query).bind(con);
+//subscribe to the exp gained events from the API
+request_events();
+
+var notifications = [];
+var lastNotificationId = 0;
+add_notification("test notification", -1);
 
 var pageMap = {
   "/":"index.html",
+  "/fanart":"fanart.html",
   "/test":"test.txt",
   "/style.css":"style.css",
+  "/fanart.css":"fanart.css",
   "/VSlogo.svg":"aliens.svg",
   "/TRlogo.svg":"sword.svg",
   "/NClogo.svg":"murica.svg"
+}
+
+loadImages();
+
+var fanart = [];
+
+async function loadImages() {
+  fanart = await fs.readdirSync("./Fanart");
+  fanart.forEach(function(value, index, array) {
+    pageMap["/" + value] = "Fanart" + path.sep + value;
+  });
 }
 
 // Provide a service to localhost only.
@@ -57,65 +84,223 @@ function connect_db(doc){
   })
 }
 
-function request_exp() {
+function sleep(ms) {
+  return new Promise((resolve) => {
+    setTimeout(resolve, ms);
+  });
+}
+
+async function try_fetch(url) {
+  try {
+    var resp = await fetch(url);
+    return resp;
+  }
+  catch (err) {
+    if (err.type == "system") {
+      throw err;
+    }
+    else if (error.name == "AbortError") {
+      return;
+    }
+    else if (error.name == "FetchError" && err.code == "ECONNRESET") {
+      await sleep(200);
+      try {
+        var resp = await fetch(url);
+        return resp;
+      }
+      catch (err) {
+        return;
+      }
+    }
+    else {
+      throw err;
+    }
+  }
+}
+
+//subscribe to census API events
+function request_events() {
   let socket = new WebSocket("wss://push.planetside2.com/streaming?environment=ps2&service-id=" + serviceID);
-  socket.onmessage = handle_exp_response;
-  socket.onopen = () => subscribe_exp(socket);  
+  socket.onmessage = handle_event_response;
+  socket.onopen = () => subscribe_events(socket);  
 }
 
-function subscribe_exp(socket) {
-  socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": ["GainExperience_experience_id_7"] }));
+function subscribe_events(socket) {
+  var expTypes = [7, 53, 4, 5, 51];
+  var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
+  var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
+  console.log(eventNames);
+  socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
-function handle_exp_response(event) {
+//handle an event sent by the API
+async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
-
+  //console.log(jsonData);
   //ignore heartbeat messages
   if (jsonData.type == "heartbeat") {
     return
   }
   else if (jsonData.type == "serviceMessage") {
     var payload = jsonData.payload;
-    //count all entries with the incoming ID
-    con.query("SELECT COUNT(id) FROM characters WHERE id =" + payload.character_id , function (err, result) {
-      if (err) throw err;
-      //console.log(result[0]["COUNT(id)"])
-      //result is a array of objects, so this ensues
-      if (result[0]["COUNT(id)"]==0) {
-        //character does not exist so we create it
-        create_character(payload.character_id);
-      }
-    })
-    //actually increase the resurrections count
-    var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
-    con.query(sql, function (err, result) {
-      if (err) throw err;
-    })
+    switch (payload.event_name) {
+      case "GainExperience":
+        console.log(payload.experience_id);
+        //revive or squad revive
+        if (payload.experience_id == 7 || payload.experience_id == 53) {
+          handle_revive(payload);
+        }
+        //heal, heal assist or squad heal
+        else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
+          await create_if_new(payload.character_id);
+          var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = " + payload.character_id + ";";
+          var resp = await query(sql);
+        }
+        else {
+          return;
+        }
+        break;
+      case "PlayerLogout":
+        delete_character(payload.character_id);
+        break;
+      case "PlayerLogin":
+        handle_login(payload);
+        break;
+      case "Death":
+        handle_death(payload);
+        break;
+      default:
+        return;
+    }
+    console.log(payload.event_name);
+  }
+}
+//returns the date in a format mysql can swallow
+function sql_timestamp(date) {
+  var string = date.toISOString();
+  var split = string.split("T");
+  var dateString = split[0];
+  var timeString = split[1].split(".")[0]
+  return dateString + " " + timeString;
+}
+
+async function handle_login(payload) {
+  await create_if_new(payload.character_id);
+  var sql = "UPDATE characters SET last_login = '" + sql_timestamp(new Date()) + "' WHERE id = " + payload.character_id + ";";
+  query(sql);
+}
+
+async function handle_death(payload) {
+  //death was suicide
+  if (payload.character_id == payload.attacker_character_id) {
+    await create_if_new(payload.attacker_character_id);
+    var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = " + payload.character_id + ";";
+    query(suicide);
+    return;
+  }
+  var victim = await get_character_data(payload.character_id, "faction_id");
+  var attacker = await get_character_data(payload.attacker_character_id, "faction_id");
+  if (!(victim && attacker)) {
+    console.log("API cannot find player");
+    return;
+  }
+  //death was teamkill
+  if (victim.faction_id == attacker.faction_id) {
+    await create_if_new(payload.attacker_character_id);
+    var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = " + payload.attacker_character_id + ";";
+    query(updateCount);
+    var clearTKs = "DELETE FROM teamkills WHERE victim_id = " + payload.character_id + ";";
+    await query(clearTKs);
+    var insertTK =  "INSERT INTO teamkills (victim_id, attacker_id) VALUES (" + payload.character_id + ", " + payload.attacker_character_id + ");";
+    query(insertTK);
+  }
+}
+
+async function handle_revive(payload) {
+  // console.log("revive received");
+  await create_if_new(payload.character_id);
+  await create_if_new(payload.other_id);
+  //actually increase the resurrections count
+  var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
+  query(sql);
+  sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
+  query(sql);
+  //check if this is a forgiveness revive
+  var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
+  var result = await query(getTKs);
+  if (result[0]["COUNT(1)"] > 0) {
+    var getName = "SELECT username FROM characters WHERE id = ";
+    var victimName = await query(getName + payload.other_id + ";");
+    var attackerName = await query(getName + payload.character_id + ";");
+    var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
+    console.log(text);
+    add_notification(text);
+    var forgive = "DELETE FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
+    query(forgive);
+  }
+}
+
+//creates a new character entry only if that character does not exist in the database
+async function create_if_new(id) {
+  var exists = await character_exists(id);
+  if (!exists) {
+    await create_character(id);
+  }
+}
+
+//wrapper for a request to the census API to get character data
+//list of possible properties can be found here: http://census.daybreakgames.com/get/ps2/
+async function get_character_data(id, ...properties) {
+  var params = "";
+  if (properties) {
+    params = "&c:show=";
+    params += properties.join("&c:show=");
+  }
+  var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
+  //console.log(requestString)
+  var result = await try_fetch(requestString);
+  if (result.status != 200) {
+    console.log("API returned invalid response code " + result.status);
+    return;
+  }
+  var jsonData = await result.json();
+  if (jsonData.character_list) {
+    return jsonData.character_list[0];
   }
 }
 
 //duplicate safe function to create a character entry from their id
-function create_character(id){
-  //request username
-  var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + "&c:show=name";
-  fetch(requestString).then( function (result) {
-    result.json().then(function (jsonData) {
-      console.log(jsonData)
-      //for some reason this is the best way to do duplicate safe insertion
-      var sql = "INSERT INTO characters(id, username) VALUES (" + id + ",'" + jsonData.character_list[0].name.first +"') ON DUPLICATE KEY UPDATE id=id;";
-      con.query(sql, function (err, result) {
-        if (err) throw err;
-      })
-    })
-  });
+async function create_character(id){
+  //request username and faction id from the api
+  var character = await get_character_data(id, "name", "faction_id");
+  if (!character) {
+    //console.log("character does not exist")
+  }
+  else {
+    //console.log(character);
+    //for some reason this is the best way to do duplicate safe insertion
+    var sql = "INSERT INTO characters(id, username, faction_id) VALUES (" + id + ",'" + character.name.first +"'," + character.faction_id + ") ON DUPLICATE KEY UPDATE id=id;";
+    await query(sql);
+  }
 }
 
-function call_api(request,response){
+async function delete_character(id) {
+  var deletChar = "DELETE FROM characters WHERE id = " + id;
+  var deletTKs = "DELETE FROM teamkills WHERE victim_id = " + id + " OR attacker_id = " + id + ";";
+  query(deletChar);
+  query(deletTKs);
+}
+async function character_exists(id) {
+  var results = await query("SELECT COUNT(id) FROM characters WHERE id =" + id + ";");
+  return results[0]["COUNT(id)"] != 0;
+}
+
+//reflect a received API request on to the census API
+async function call_api(request,response){
   var i=request.url.indexOf("api")+4
-  fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i)).then(handle);
-  function handle(apiresponse) {
-    apiresponse.text().then( (text) => reply(response, text, mime.contentType(".json")));  
-  }
+  var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
+  var text = await apiresponse.text()
+  reply(response, text, mime.contentType(".json"));
 }
 
 //main HTTP handle function
@@ -126,41 +311,83 @@ function handle(request, response) {
   console.log("URL:", request.url);
   console.log("Params: ", params)
 
-  //check if the requested URL maps to a file
-  var file = pageMap[request.url];
-  if (file) {
-    console.log("Filename found: " + file);
-    var type = mime.contentType(file);
-    console.log("Content-Type: " + type);
-    //if it's an HTML page, send it off for templating
-    if (type.includes("text/html")) {
-      send_page(file, response);
-    }
-    else { //otherwise just send the file
-      send_file(file, response, type);
-    }
+  if (request.method == "GET") {
+    handle_get(request, response, params)
   }
-  //reflect request on to the daybreak API
-  else if (request.url.startsWith("/api/")){
-    call_api(request,response);
-  }
-
-  console.log();
-  //client has requested the 10 characters with the most resurrections
-  if ("res" in params){
-    var q = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
-    con.query(q, function (err, result) {
-      //build a string from the SQL result array
-      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ")
-      reply(response, content, "text/plain")
-      if (err) throw err;
-    });
+  else if (request.method == "POST") {
+    handle_post(request, response, params)
   }
 }
 
+async function handle_get(request, response, params) {
+    //check if the requested URL maps to a file
+    var file = pageMap[request.url];
+    if (file) {
+      console.log("Filename found: " + file);
+      var type = mime.contentType(file);
+      console.log("Content-Type: " + type);
+      //if it's an HTML page, send it off for templating
+      if (type.includes("text/html")) {
+        send_page(file, response);
+      }
+      else { //otherwise just send the file
+        send_file(file, response, type);
+      }
+    }
+    //reflect request on to the daybreak API
+    else if (request.url.startsWith("/api/")){
+      call_api(request,response);
+    }
+    else if (request.url.startsWith("/notifications")) {
+      reply(response, JSON.stringify(notifications), "text/json");
+    }
+  
+    console.log();
+    //client has requested the 10 characters with the most resurrections
+    if ("res" in params){
+      var sql = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
+      var result = await query(sql);
+      //build a string from the SQL result array
+      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ");
+      reply(response, content, "text/plain");
+    }
+}
+
+function handle_post(request, response, params) {
+  var url = request.url;
+  if (url == "/fanart") {
+    var form = new formidable.IncomingForm();
+    form.parse(request, parse_fanart);
+    response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
+    response.end();
+  }
+}
+
+function add_notification(text, timeout) {
+  var notification = {};
+  notification.text = text;
+  notification.id = lastNotificationId++;
+  notification.timestamp = new Date();
+  notifications.push(notification);
+  if (timeout >= 0) {
+    remove_notification(notification.id, timeout * 1000);
+  }
+}
+
+async function remove_notification(id, timeout) {
+  await sleep(timeout);
+  notifications = notifications.filter((n) => n.id != id);
+}
+
+function parse_fanart(err, fields, files) {
+  if (err) throw err;
+  console.log("Files uploaded " + JSON.stringify(files));
+  fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+}
 
 //we may use this one day
 //C# has this as an operator nehhh
+//actually I'm pretty sure JS does too: ??
 function isnull(a,b){
   if (a==null){
     return b;
@@ -198,6 +425,9 @@ async function send_page(filePath, response) {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;
   }
+  else if (filePath == "fanart.html") {
+    templateMap["images"] = fanart;
+  }
   content = template(content, templateMap);
   // console.log("Content: " + content);
   reply(response, content, 'text/html');
@@ -206,26 +436,82 @@ async function send_page(filePath, response) {
 //takes the page content string and a map of variable names to values
 //returns the same content with the names changed to values
 function template(content, templateMap) {
-  var i = content.indexOf("${");
+  var i = content.indexOf("$");
   while(i != -1) {
-    var end = content.indexOf("}", i);
-    if (end != -1) {
-      var key = content.substring(i + 2, end)
-      if (templateMap[key]) {
-        content = content.split("${" + key + "}").join(templateMap[key]);
+    //basic substitution
+    i++;
+    if (content[i] == '{') {
+      
+      var end = content.indexOf("}", i);
+      if (end != -1) {
+        var key = content.substring(i + 1, end)
+        if (templateMap[key]) {
+          content = content.split("${" + key + "}").join(templateMap[key]);
+        }
+      }
+      else {
+        break;
       }
     }
+    //foreach substitution
+    //currently does now allow for nested foreachs
+    else if (content.substring(i).startsWith("foreach(")) {
+      //console.log("templating foreach");
+      var bracketEnd = content.indexOf(")", i);
+      if (bracketEnd == -1) {
+        console.log("malformed foreach templating at " + i);
+        break;
+      }
+      var inside = content.substring(i + "foreach(".length, bracketEnd).split(" in ");
+      var keyName = inside[0];
+      //console.log("key name = " + keyName);
+      var array = templateMap[inside[1]];
+      //console.log("array = " + array);
+      var end = content.indexOf("endfor", i);
+      if (end == -1) {
+        console.log("malformed foreach templating at " + i);
+        break;
+      }
+      var body = content.substring(bracketEnd + 1, end);
+      //console.log("body: " + body);
+      let newContent = "";
+      array.forEach(function(value, index, array) {
+        //console.log("entering loop");
+        //recurse down to template the body
+        var map = {};
+        map[keyName] = value;
+        var block = template(body, map);
+        //console.log("block = " + block);
+        newContent = newContent.concat(block);
+      });
+      //console.log("new content = " + newContent);
+      //replace the template with the templated blocks
+      content = content.substring(0, i - 1) + newContent + content.substring(end + "endfor".length);
+    }
     else {
+      console.log("lone $ found in templating");
       break;
     }
-    i = content.indexOf("${");
+    i = content.indexOf("$");
   }
+  console.log(content);
   return content;
 }
 
 //just read and send a file normally
 async function send_file(filePath, response, mimeType) {
-  var content = await FS.readFileSync("./" + filePath, "utf8");
+  // var stream = fs.createReadStream("./" + filePath);
+  // stream.on("open", function (fd) {
+  //   stream.pipe(response);
+  //   reply(response, null, mimeType);
+  // })
+  var content
+  if (mimeType.includes("text")) {
+    content = await FS.readFileSync("./" + filePath, "utf8");
+  }
+  else {
+    content = await fs.readFileSync("./" + filePath);
+  }
   reply(response, content, mimeType);
 }
 
@@ -234,6 +520,8 @@ async function send_file(filePath, response, mimeType) {
 function reply(response, content, mimeType) {
   let hdrs = { 'Content-Type': mimeType };
   response.writeHead(200, hdrs);  // 200 = SNAZZY
-  response.write(content);
+  if (content != null) {
+    response.write(content);
+  }
   response.end();
 }
