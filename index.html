@@ -89,6 +89,12 @@
 
 <p id=resurrections></p>
 <script>
+  var flag = "inc";
+  const colnames = {
+      name: 0,
+      res: 1
+  }
+
   "use strict"
   fetch("/?res=yes").then(handleRessurections);
   function handleRessurections(response) {
@@ -96,7 +102,81 @@
     response.text().then(fillRessurections)
   }
   function fillRessurections(data) {
-    document.body.querySelector("#resurrections").innerHTML = data;
+    document.body.querySelector("#resurrections").innerHTML = stringToTable(data);
+    document.getElementById("res").addEventListener('click', function(){
+      if (flag == "inc"){
+        sort("playerstats", "res", "dec");
+        flag="dec"
+      }
+      else {
+        sort("playerstats", "res", "inc");
+        flag ="inc"
+      }
+    })
+    document.getElementById("name").addEventListener('click', function(){
+      sort("playerstats", "name","inc");
+    })
+  }
+
+  function stringToTable(data) {
+    var array = parse(data);
+    var perrow = 2, // 3 cells per row
+    html = "<table id = playerstats ><tr>";
+    html += "<td id = name> Username </td>";
+    html += "<td id = res> # of resurrections </td> </tr> <tr>";  
+    for (var i=0; i<array.length; i++) {
+      html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "</td>";
+      if ((i+1)%perrow==0 && (i+1)!=array.length) {
+        html += "</tr><tr>";
+      }
+    }
+    html += "</tr></table>";
+    return html;
+  }
+
+  function sort(tableid, sortid, iord){
+    id = colnames[sortid];
+    var table, rows, switching, i, x, y, shouldSwitch;
+    table = document.getElementById(tableid);
+    switching = true;
+    while (switching) {
+      switching = false;
+      rows = table.rows;
+      for (i = 1; i < (rows.length - 1); i++) {
+        shouldSwitch = false;
+        x = rows[i].childNodes[id]
+        y = rows[i+1].childNodes[id]
+        if (iord == "inc"){
+          if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+          shouldSwitch = true;
+          break;
+          }
+        }
+        else {
+          if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+          shouldSwitch = true;
+          break;
+         }
+        }
+        
+      }
+      if (shouldSwitch) {
+        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+        switching = true;
+      }
+    }
+  }
+
+  function parse(str){
+    console.log(str);
+    str=str.split(" ").join("");
+    console.log(str);
+    str=str.split("(").join("");
+    console.log(str);
+    str=str.split(")").join("");
+    console.log(str);
+    console.log(str);
+    return str.split(",");
   }
 </script> 
 

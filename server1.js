@@ -148,8 +148,8 @@ function handle(request, response) {
   console.log();
   //client has requested the 10 characters with the most resurrections
   if ("res" in params){
-    var thing = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
-    con.query(thing, function (err, result) {
+    var q = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
+    con.query(q, function (err, result) {
       //build a string from the SQL result array
       var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ")
       reply(response, content, "text/plain")
