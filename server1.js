@@ -54,14 +54,14 @@ async function loadImages() {
 
 // Provide a service to localhost only.
 function start_server(port) {
-  let service = HTTP.createServer(handle);
-  wss = new WebSocket.Server({server: service});
+  let server = HTTP.createServer(handle);
+  wss = new WebSocket.Server({server});
   wss.on("connection", wss_connection);
-  service.listen(port);
+  console.log(wss);
+  server.listen(port);
 }
 
 function wss_connection(ws) {
-  console.log("ho")
   notification_clients.push(ws);
   ws.on("close", client_close);
 }
@@ -75,7 +75,7 @@ function send_notification(text) {
   notification.text = text;
   notification.timestamp = new Date();
   for (var ws in notification_clients) {
-    ws.send(JSON.stringify(notification));
+    notification_clients[ws].send(JSON.stringify(notification));
   }
 }
 
@@ -245,6 +245,7 @@ async function handle_revive(payload) {
   query(sql);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
   query(sql);
+  send_notification("A player has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
   var result = await query(getTKs);
@@ -377,8 +378,11 @@ async function handle_get(request, response, params) {
       var result = await query(sql);
       console.log("AAA")
       console.log(result)
-      //build a string from the SQL result array
-      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", "); //TODO: fix jonny's dumb ass
+      // var json_object= result.map(function (value, index, array) {
+      //   return {value.}
+      // });
+      var content = result;
+      console.log(content)
       reply(response, content, "text/plain");
     }
   }
