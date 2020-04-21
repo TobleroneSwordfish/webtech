@@ -367,7 +367,6 @@ async function handle_get(request, response, params) {
     }
     console.log(name)
     if (columns.includes(name)){
-      console.log("we're in bois")
       if (params.count) {
         var count = params.count;
       }
@@ -378,11 +377,16 @@ async function handle_get(request, response, params) {
       var result = await query(sql);
       console.log("AAA")
       console.log(result)
-      // var json_object= result.map(function (value, index, array) {
-      //   return {value.}
-      // });
-      var content = result;
-      console.log(content)
+      var jsonObject= result.map(function (value, index, array) {
+        var obj = {};
+        for (var col in columns) {
+          obj[columns[col]] = value[columns[col]];
+        }
+        return obj;
+      });
+      //console.log(jsonObject);
+      var content = JSON.stringify(jsonObject);
+      //console.log(content)
       reply(response, content, "text/plain");
     }
   }
