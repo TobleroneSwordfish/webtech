@@ -377,12 +377,13 @@ async function handle_get(request, response, params) {
       var result = await query(sql);
       console.log("AAA")
       console.log(result)
-      var jsonObject= result.map(function (value, index, array) {
+      var jsonObject = {};
+      result.forEach(function (value, index, array) {
         var obj = {};
         for (var col in columns) {
           obj[columns[col]] = value[columns[col]];
         }
-        return obj;
+        jsonObject[index] = obj;
       });
       //console.log(jsonObject);
       var content = JSON.stringify(jsonObject);
