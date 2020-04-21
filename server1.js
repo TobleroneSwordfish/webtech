@@ -449,6 +449,9 @@ function template(content, templateMap) {
         if (templateMap[key]) {
           content = content.split("${" + key + "}").join(templateMap[key]);
         }
+        else {
+          throw new Error("Template key not found");
+        }
       }
       else {
         break;
