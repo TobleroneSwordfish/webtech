@@ -4,25 +4,30 @@
 <head>
 <link rel="stylesheet" type="text/css" href="style.css">
 <meta charset="UTF-8"/>
-<title>we need a title</title>
+<title>Planetside 2 stats</title>
 </head>
-<body>
+<body style= "background-color: rgb(70, 70, 70); color:#fff">
 <ul class="navbar horizontal">
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
   <li><a href="/about.html">About</a></li>
 </ul>
-<div class="container horizontal" style="width: 60%; margin-left: 20%;">
-  <div class="container logo" style="transform-origin: top left;">
-    <img src="/VSlogo.svg" class="logo-img">
+<div style = "overflow: hidden; height: 20%;">
+<div class="container horizontal" style="width: 60%; height: 100%; float:left;  margin-left: 20%;">
+  <div class="container logo" style="transform-origin: top left; height: 100%; ">
+    <img src="/VSlogo.svg" class="logo-img center">
     <div class="top-left faction-info hidden">teeeeeeeext</div>
   </div>
-  <div class="container logo" style="transform-origin: top center;">
-    <img src="/NClogo.svg" class="logo-img">
+  <div class="container logo" style="transform-origin: top center; height: 100%">
+    <img src="/NClogo.svg" class="logo-img center">
   </div>
-  <div class="container logo" style="transform-origin: top right;">
-    <img src="/TRlogo.svg" class="logo-img">
+  <div class="container logo" style="transform-origin: top right; height: 100%">
+    <img src="/TRlogo.svg" class="logo-img center">
   </div>
+</div>
+<div style = "float:right;  width: 18%; height: 90%; border: 4px solid rgb(76, 15, 133);">
+<div style = "border-bottom: 2px solid blue; text-align: center; overflow:auto;" id= "notifications"> NOTIFICATIONS</div>
+</div>
 </div>
 <script>
   "use strict"
@@ -84,10 +89,9 @@
     }
   }
 </script>
-<h1>hmm yes</h1>
-<p>The current time and date is ${time}</p>
-
+<div>
 <p id=resurrections></p>
+</div>
 <script>
   var flag = "inc";
   const colnames = {
@@ -197,6 +201,21 @@
     response.json().then(fill)
   }
   function fill(data) {
+    document.body.querySelector("#jsondump").innerHTML = JSON.stringify(data);
+  }
+</script>
+
+<script>
+  "use strict"
+  var serviceID = "s:jtwebtech"
+  let socket = new WebSocket(window.location.hostname + "/notifications");
+  socket.onmessage = handle_notifications;
+  socket.onopen = open_notification_socket();
+  function handle_notifications(){
+    response.json().then(fill_notifications)
+  }
+  function fill_notifications(data) {
+    console.log(data)
     document.body.querySelector("#jsondump").innerHTML = JSON.stringify(data);
   }
 </script>
