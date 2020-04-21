@@ -56,12 +56,9 @@ async function loadImages() {
 function start_server(port) {
   let server = HTTP.createServer(handle);
   wss = new WebSocket.Server({server});
-  // wss.port = port;
-  // wss.host = "localhost";
-  // wss.path = "/notifications";
   wss.on("connection", wss_connection);
   console.log(wss);
-  server.listen(port, 'localhost');
+  server.listen(port);
 }
 
 function wss_connection(ws) {
@@ -243,12 +240,12 @@ async function handle_revive(payload) {
   // console.log("revive received");
   await create_if_new(payload.character_id);
   await create_if_new(payload.other_id);
-  send_notification("A player has been revived, 'tis a miracle!");
   //actually increase the resurrections count
   var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
   query(sql);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
   query(sql);
+  send_notification("A player has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
   var result = await query(getTKs);
@@ -379,12 +376,12 @@ async function handle_get(request, response, params) {
       }
       var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" DESC LIMIT "+ count +";";
       var result = await query(sql);
-      //build a string from the SQL result array
+      console.log("AAA")
       console.log(result)
       // var json_object= result.map(function (value, index, array) {
       //   return {value.}
       // });
-      var content = JSON.parse(result)
+      var content = result;
       console.log(content)
       reply(response, content, "text/plain");
     }
@@ -461,9 +458,6 @@ function template(content, templateMap) {
         var key = content.substring(i + 1, end);
         if (templateMap[key]) {
           content = content.split("${" + key + "}").join(templateMap[key]);
-        }
-        else {
-          throw new Error("Template key not found");
         }
       }
       else {

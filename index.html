@@ -191,11 +191,9 @@
   notification_socket.onmessage = handle_notifications;
   // notification_socket.onopen = open_notification_socket();
   function handle_notifications(response){
-    // console.log(response);
     fill_notifications(JSON.parse(response.data));
   }
   function fill_notifications(data) {
-    // console.log(data.text)
     var box = document.body.querySelector("#notifications");
     var newElement = document.createElement("div");
     newElement.innerText = data.text;
