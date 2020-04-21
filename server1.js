@@ -60,20 +60,11 @@ function start_server(port) {
   // wss.host = "localhost";
   // wss.path = "/notifications";
   wss.on("connection", wss_connection);
-<<<<<<< HEAD
-  service.listen(port);
-}
-
-function wss_connection(ws) {
-  console.log("ho")
-=======
   console.log(wss);
   server.listen(port, 'localhost');
 }
 
 function wss_connection(ws) {
-  console.log("Karamja")
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
   notification_clients.push(ws);
   ws.on("close", client_close);
 }
@@ -390,7 +381,9 @@ async function handle_get(request, response, params) {
       var result = await query(sql);
       //build a string from the SQL result array
       console.log(result)
-      var json_object= result.map(function (value, index, array) )
+      // var json_object= result.map(function (value, index, array) {
+      //   return {value.}
+      // });
       var content = JSON.parse(result)
       console.log(content)
       reply(response, content, "text/plain");
