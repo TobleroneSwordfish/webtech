@@ -128,12 +128,12 @@
     var perrow = 5;
     var html = "";
     html = "<table id = playerstats ><tr>";
-    html += "<td id = name> Username </td>";
-    html += "<td id = res> # of resurrections </td>";
-    html += "<td id = res> # of suicides </td>";
-    html += "<td id = res> # of teamkills </td>";
-    html += "<td id = res> # of times_revived </td>";
-    html += "</tr> <tr>";  
+    html += "<td id = name> Username <\/td>";
+    html += "<td id = res> # of resurrections <\/td>";
+    html += "<td id = res> # of suicides <\/td>";
+    html += "<td id = res> # of teamkills <\/td>";
+    html += "<td id = res> # of times_revived <\/td>";
+    html += "<\/tr> <tr>";  
     // for (var i=0; i<array.length; i++) {
     //   html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "<\/td>";
     //   if ((i+1)%perrow==0 && (i+1)!=array.length) {
@@ -202,6 +202,10 @@
     newElement.innerText = data.text;
     box.insertBefore(newElement, box.childNodes[0]);
   }
-</script> 
+</script>
+<a id="tidy_logo" href="http://users.skynet.be/mgueury/mozilla/">
+  <img src="http://users.skynet.be/mgueury/mozilla/tidy_32.gif"
+  alt="Validated by HTML Validator (based on Tidy) " height="32" width="78"/>
+</a>
 </body>
 </html>

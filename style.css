@@ -105,3 +105,8 @@ ul.navbar li a:hover {
     width:100%;
     word-wrap: break-word;
 }
+
+#tidy_logo {
+    position: absolute;
+    bottom: 0px;
+}
