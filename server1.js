@@ -320,37 +320,39 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
-    //check if the requested URL maps to a file
-    var file = pageMap[request.url];
-    if (file) {
-      console.log("Filename found: " + file);
-      var type = mime.contentType(file);
-      console.log("Content-Type: " + type);
-      //if it's an HTML page, send it off for templating
-      if (type.includes("text/html")) {
-        send_page(file, response);
-      }
-      else { //otherwise just send the file
-        send_file(file, response, type);
-      }
+  var columns = ["username", "suicides", "teamkills", "healing_ticks", "resurrections", "times_revived", "faction_id"];
+  //check if the requested URL maps to a file
+  var file = pageMap[request.url];
+  if (file) {
+    console.log("Filename found: " + file);
+    var type = mime.contentType(file);
+    console.log("Content-Type: " + type);
+    //if it's an HTML page, send it off for templating
+    if (type.includes("text/html")) {
+      send_page(file, response);
     }
-    //reflect request on to the daybreak API
-    else if (request.url.startsWith("/api/")){
-      call_api(request,response);
+    else { //otherwise just send the file
+      send_file(file, response, type);
     }
-    else if (request.url.startsWith("/notifications")) {
-      reply(response, JSON.stringify(notifications), "text/json");
-    }
-  
-    console.log();
-    //client has requested the 10 characters with the most resurrections
-    if ("res" in params){
-      var sql = "SELECT username, resurrections FROM characters ORDER BY resurrections DESC LIMIT 10;";
+  }
+  //reflect request on to the daybreak API
+  else if (request.url.startsWith("/api/")){
+    call_api(request,response);
+  }
+  else if (request.url.startsWith("/notifications")) {
+    reply(response, JSON.stringify(notifications), "text/json");
+  }
+  else if (request.url.startsWith("/api/")) {
+    var name = request.url.substring(5);
+    if (name in columns){
+      var sql = "SELECT username, resurrections FROM characters ORDER BY "+ name +" DESC LIMIT "+ params["count"] +";";
       var result = await query(sql);
       //build a string from the SQL result array
-      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", ");
+      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", "); //TODO: fix jonny's dumb ass
       reply(response, content, "text/plain");
     }
+  }
+  console.log();
 }
 
 function handle_post(request, response, params) {
@@ -383,16 +385,6 @@ function parse_fanart(err, fields, files) {
   if (err) throw err;
   console.log("Files uploaded " + JSON.stringify(files));
   fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
-}
-
-//we may use this one day
-//C# has this as an operator nehhh
-//actually I'm pretty sure JS does too: ??
-function isnull(a,b){
-  if (a==null){
-    return b;
-  }
-  return a;
 }
 
 //returns a dict mapping parameter names to values
