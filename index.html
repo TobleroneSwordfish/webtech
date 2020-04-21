@@ -109,43 +109,47 @@
     console.log("response is")
     console.log(data)
     document.body.querySelector("#info").innerHTML = stringToTable(data);
-    document.getElementById("res").addEventListener('click', function(){
+    for (var id in colnames){
+      document.getElementById(id).addEventListener('click', function(){
       if (flag == "inc"){
-        sort("playerstats", "res", "dec");
+        sort("playerstats", id, "dec");
         flag="dec"
       }
       else {
-        sort("playerstats", "res", "inc");
+        sort("playerstats", id, "inc");
         flag ="inc"
       }
-    })
-    
+      })
+    }
   }
 
   function stringToTable(data) {
     var obj = JSON.parse(data);
     console.log(obj);
-    var perrow = 5;
     var html = "";
     html = "<table id = playerstats ><tr>";
-    html += "<td id = name> Username </td>";
-    html += "<td id = res> # of resurrections </td>";
-    html += "<td id = res> # of suicides </td>";
-    html += "<td id = res> # of teamkills </td>";
-    html += "<td id = res> # of times_revived </td>";
+    html += "<td id = username> Username </td>";
+    html += "<td id = resurrections> # of resurrections </td>";
+    html += "<td id = suicides> # of suicides </td>";
+    html += "<td id = teamkills> # of teamkills </td>";
+    html += "<td id = times_revived> # of times_revived </td>";
     html += "</tr> <tr>";  
-    // for (var i=0; i<array.length; i++) {
-    //   html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "<\/td>";
-    //   if ((i+1)%perrow==0 && (i+1)!=array.length) {
-    //     html += "<\/tr><tr>";
-    //   }
-    // }
+    for (var u in obj){
+      var keys = Object.keys(obj[u])
+      for (var p in keys){
+        console.log(keys)
+        var property = obj[u][keys[p]]
+        html += "<td>" + obj[u][keys[p]] + "<\/td>";
+      }
+      html += "</tr> <tr>";  
+    }
     html += "<\/tr><\/table>";
     return html;
   }
 
   function sort(tableid, sortid, iord){
-    id = colnames[sortid];
+    console.log(sortid)
+    var id = colnames[sortid];
     var table, rows, switching, i, x, y, shouldSwitch;
     table = document.getElementById(tableid);
     switching = true;
@@ -154,7 +158,9 @@
       rows = table.rows;
       for (i = 1; i < (rows.length - 1); i++) {
         shouldSwitch = false;
+        // console.log(rows[i])
         x = rows[i].childNodes[id]
+        console.log(x)
         y = rows[i+1].childNodes[id]
         if (iord == "inc"){
           if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
