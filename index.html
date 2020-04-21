@@ -84,11 +84,7 @@
   }
 </script>
 <div>
-<<<<<<< HEAD
 <p id=info></p>
-=======
-<p id="resurrections"></p>
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
 </div>
 <script>
   "use strict"
@@ -100,13 +96,9 @@
     teamkills: 3,
     times_revived: 4
   }
-<<<<<<< HEAD
 
   "use strict"
   fetch("/api/").then(handleRessurections);
-=======
-  fetch("/?res=yes").then(handleRessurections);
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
   function handleRessurections(response) {
     response.text().then(fillRessurections)
   }
@@ -135,17 +127,12 @@
     console.log(array)
     var perrow = 5
     html = "<table id = playerstats ><tr>";
-<<<<<<< HEAD
     html += "<td id = name> Username </td>";
     html += "<td id = res> # of resurrections </td>";
     html += "<td id = res> # of suicides </td>";
     html += "<td id = res> # of teamkills </td>";
     html += "<td id = res> # of times_revived </td>";
     html += "</tr> <tr>";  
-=======
-    html += "<td id = name> Username <\/td>";
-    html += "<td id = res> # of resurrections <\/td> <\/tr> <tr>";  
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
     for (var i=0; i<array.length; i++) {
       html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "<\/td>";
       if ((i+1)%perrow==0 && (i+1)!=array.length) {
@@ -202,22 +189,14 @@
 </script>
 <script>
   "use strict"
-<<<<<<< HEAD
   var serviceID = "s:jtwebtech"
   let notification_socket = new WebSocket( "ws://"+window.location.hostname + "/notifications");
   notification_socket.onmessage = handle_notifications;
   function handle_notifications(){
     response.json().then(fill_notifications)
-=======
-  let notification_socket = new WebSocket("ws://" + window.location.hostname + ":8080/notifications");
-  notification_socket.onmessage = handle_notifications;
-  // notification_socket.onopen = open_notification_socket();
-  function handle_notifications(response){
-    console.log(response);
-    fill_notifications(JSON.parse(response.data));
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
   }
   function fill_notifications(data) {
+    console.log("Notification:")
     console.log(data.text)
     var box = document.body.querySelector("#notifications");
     var newElement = document.createElement("div");

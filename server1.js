@@ -54,26 +54,14 @@ async function loadImages() {
 
 // Provide a service to localhost only.
 function start_server(port) {
-  let server = HTTP.createServer(handle);
-  wss = new WebSocket.Server({server});
-  // wss.port = port;
-  // wss.host = "localhost";
-  // wss.path = "/notifications";
+  let service = HTTP.createServer(handle);
+  wss = new WebSocket.Server({server: service});
   wss.on("connection", wss_connection);
-<<<<<<< HEAD
   service.listen(port);
 }
 
 function wss_connection(ws) {
   console.log("ho")
-=======
-  console.log(wss);
-  server.listen(port, 'localhost');
-}
-
-function wss_connection(ws) {
-  console.log("Karamja")
->>>>>>> 617dcff5fbfc17df06bb161162fa11b0094219b2
   notification_clients.push(ws);
   ws.on("close", client_close);
 }
@@ -87,7 +75,7 @@ function send_notification(text) {
   notification.text = text;
   notification.timestamp = new Date();
   for (var ws in notification_clients) {
-    notification_clients[ws].send(JSON.stringify(notification));
+    ws.send(JSON.stringify(notification));
   }
 }
 
@@ -252,7 +240,6 @@ async function handle_revive(payload) {
   // console.log("revive received");
   await create_if_new(payload.character_id);
   await create_if_new(payload.other_id);
-  send_notification("A player has been revived, 'tis a miracle!");
   //actually increase the resurrections count
   var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
   query(sql);
@@ -388,11 +375,10 @@ async function handle_get(request, response, params) {
       }
       var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" DESC LIMIT "+ count +";";
       var result = await query(sql);
-      //build a string from the SQL result array
+      console.log("AAA")
       console.log(result)
-      var json_object= result.map(function (value, index, array) )
-      var content = JSON.parse(result)
-      console.log(content)
+      //build a string from the SQL result array
+      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", "); //TODO: fix jonny's dumb ass
       reply(response, content, "text/plain");
     }
   }
@@ -468,9 +454,6 @@ function template(content, templateMap) {
         var key = content.substring(i + 1, end);
         if (templateMap[key]) {
           content = content.split("${" + key + "}").join(templateMap[key]);
-        }
-        else {
-          throw new Error("Template key not found");
         }
       }
       else {
