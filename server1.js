@@ -316,14 +316,6 @@ async function character_exists(id) {
   return results[0]["COUNT(id)"] != 0;
 }
 
-// //reflect a received API request on to the census API
-// async function call_api(request,response){
-//   var i=request.url.indexOf("api")+4
-//   var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
-//   var text = await apiresponse.text()
-//   reply(response, text, mime.contentType(".json"));
-// }
-
 //main HTTP handle function
 function handle(request, response) {
   var params = parse_parameters(request.url);
@@ -341,6 +333,8 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
+  console.log("params")
+  console.log(params)
   var columns = ["username", "suicides", "teamkills", "healing_ticks", "resurrections", "times_revived", "faction_id"];
   //check if the requested URL maps to a file
   var file = pageMap[request.url];
@@ -361,7 +355,7 @@ async function handle_get(request, response, params) {
   }
   else if (request.url.startsWith("/api/")) {
     console.log("hello")
-    var name = request.url.substring(5);
+    var name = request.url.substring(5).split("?")[0];
     if (name==""){
       name = "resurrections"
     }
@@ -373,7 +367,21 @@ async function handle_get(request, response, params) {
       else {
         var count = 10;
       }
-      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" DESC LIMIT "+ count +";";
+      var iord;
+      if (params.iord){
+        // if (params.iord=="inc"){
+        //   console.log("Ascending")
+        //   iord="ASC"
+        // }
+        // else {
+          iord="DESC"
+      //   }
+      }
+      else {
+        iord="DESC"
+      }
+      console.log("fetching")
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" "+ iord +" LIMIT "+ count +";";
       var result = await query(sql);
       console.log("AAA")
       console.log(result)

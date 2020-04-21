@@ -5,25 +5,23 @@
 <meta charset="UTF-8">
 <title>Planetside 2 stats</title>
 </head>
-<body style="background-color: rgb(70, 70, 70); color:#fff">
+<body>
 <ul class="navbar horizontal">
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
 <li><a href="/about.html">About</a></li>
 </ul>
-<div style="overflow: hidden; height: 20%; margin-top: 1%;">
-<div class="container horizontal" style="width: 60%; height: 100%; float:left; margin-left: 20%;">
-<div class="container logo" style="transform-origin: top left; height: 100%;"><img src="/VSlogo.svg" class="logo-img center" alt="#########">
+<div class = "top">
+<div class = "container">
+<div class="logo transform_top_left"><img src="/VSlogo.svg" class="logo-img center" alt="Aliens">
 <div class="top-left faction-info hidden">sample teeeeeeeext</div>
 </div>
-<div class="container logo" style="transform-origin: top center; height: 100%; "><img src="/NClogo.svg" class="logo-img center" alt="#########"></div>
-<div class="container logo" style="transform-origin: top right; height: 100%"><img src="/TRlogo.svg" class="logo-img center" alt="#########"></div>
+<div class="logo transform_top_center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
+<div class="logo transform_top_right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
 </div>
-<div style="float:right; width: 18%; height: 90%; border: 4px solid rgb(76, 15, 133);">
-<div style="border-bottom: 2px solid blue; text-align: center;">NOTIFICATIONS</div>
-<div style= "overflow:auto; height:80%;" id="notifications">
-
-</div>
+<div class = "box">
+<div class = "box-title">NOTIFICATIONS</div>
+<div class = "box-content" id="notifications"></div>
 </div>
 </div>
 <script>
@@ -91,7 +89,7 @@
 </div>
 <script>
   "use strict"
-  var flag = "inc";
+  // var flag = "inc";
   const colnames = {
     username: 0,
     resurrections: 1,
@@ -100,7 +98,6 @@
     times_revived: 4
   }
 
-  "use strict"
   fetch("/api/").then(handleTable);
   function handleTable(response) {
     response.text().then(fillTable)
@@ -109,23 +106,27 @@
     console.log("response is")
     console.log(data)
     document.body.querySelector("#info").innerHTML = stringToTable(data);
-    for (var id in colnames){
+    for (let id in colnames){
+      console.log(id)
       document.getElementById(id).addEventListener('click', function(){
-      if (flag == "inc"){
-        sort("playerstats", id, "dec");
-        flag="dec"
-      }
-      else {
-        sort("playerstats", id, "inc");
-        flag ="inc"
-      }
+      // if (flag == "inc"){
+        // fetch("/api/" + id + "?count=10&iod=inc").then(handleTable);
+        // flag="dec"
+      // }
+      // else {
+      //   console.log("hello")
+        fetch("/api/" + id + "?count=10&iod=dec").then(handleTable);
+      //   flag ="inc"
+      // }
       })
     }
   }
 
   function stringToTable(data) {
+    data = data.split("null").join(0)
     var obj = JSON.parse(data);
     console.log(obj);
+
     var html = "";
     html = "<table id = playerstats ><tr>";
     html += "<td id = username> Username </td>";
@@ -136,10 +137,11 @@
     html += "</tr> <tr>";  
     for (var u in obj){
       var keys = Object.keys(obj[u])
-      for (var p in keys){
-        console.log(keys)
-        var property = obj[u][keys[p]]
-        html += "<td>" + obj[u][keys[p]] + "<\/td>";
+      for (var p in colnames){
+        console.log(p)
+        var property = obj[u][p]
+        console.log(property)
+        html += "<td>" + obj[u][p] + "<\/td>";
       }
       html += "</tr> <tr>";  
     }
@@ -156,20 +158,19 @@
     while (switching) {
       switching = false;
       rows = table.rows;
-      for (i = 1; i < (rows.length - 1); i++) {
+      for (i = 1; i < (rows.length - 2); i++) {
         shouldSwitch = false;
         // console.log(rows[i])
         x = rows[i].childNodes[id]
-        console.log(x)
         y = rows[i+1].childNodes[id]
         if (iord == "inc"){
-          if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) {
+          if (parseInt(x.innerHTML.toLowerCase()) > parseInt(y.innerHTML.toLowerCase())) {
           shouldSwitch = true;
           break;
           }
         }
         else {
-          if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) {
+          if (parseInt(x.innerHTML.toLowerCase()) < parseInt(y.innerHTML.toLowerCase())) {
           shouldSwitch = true;
           break;
          }

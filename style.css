@@ -5,6 +5,8 @@
 html, body {
     max-width: 100%;
     height: 100%;
+    background-color: rgb(70, 70, 70); 
+    color:#fff
 }
 
 img{
@@ -17,6 +19,36 @@ img{
       margin-left: auto;
       margin-right: auto;
       width: 100%;
+}
+
+.top {
+    overflow: visible; 
+    height: 20%; 
+    margin-top: 1%;
+}
+
+.container{
+    width: 60%; 
+    height: 100%; 
+    float:left; 
+    margin-left: 20%;
+}
+
+.box {
+    float:right; 
+    width: 18%; 
+    height: 90%; 
+    border: 4px solid rgb(76, 15, 133);
+}
+
+.box-title {
+    border-bottom: 2px solid blue; 
+    text-align: center;
+}
+
+.box-content {
+    overflow:auto; 
+    height:80%;
 }
 
 ul.navbar {
@@ -51,8 +83,21 @@ ul.navbar li a:hover {
     background-color: darkseagreen;
 }
 
+.transform_top_left {
+    transform-origin: top left;
+}
+
+.transform_top_center {
+    transform-origin: top center;
+}
+
+.transform_top_right {
+    transform-origin: top right;
+}
+
 .logo {
     /* transform: scale(0.5); */
+    height: 100%;
     max-width:30%;
     display: inline-block;
     position: relative;
@@ -102,6 +147,7 @@ ul.navbar li a:hover {
 }
 
 .faction-info {
-    width:100%;
+    max-width:100%;
+    text-overflow: auto;
     word-wrap: break-word;
 }
