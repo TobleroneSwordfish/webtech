@@ -57,10 +57,11 @@ function start_server(port) {
   let service = HTTP.createServer(handle);
   wss = new WebSocket.Server({server: service});
   wss.on("connection", wss_connection);
-  service.listen(port, 'localhost');
+  service.listen(port);
 }
 
 function wss_connection(ws) {
+  console.log("ho")
   notification_clients.push(ws);
   ws.on("close", client_close);
 }
@@ -314,13 +315,13 @@ async function character_exists(id) {
   return results[0]["COUNT(id)"] != 0;
 }
 
-//reflect a received API request on to the census API
-async function call_api(request,response){
-  var i=request.url.indexOf("api")+4
-  var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
-  var text = await apiresponse.text()
-  reply(response, text, mime.contentType(".json"));
-}
+// //reflect a received API request on to the census API
+// async function call_api(request,response){
+//   var i=request.url.indexOf("api")+4
+//   var apiresponse = await try_fetch("http://census.daybreakgames.com/s:jtwebtech/" + request.url.slice(i));
+//   var text = await apiresponse.text()
+//   reply(response, text, mime.contentType(".json"));
+// }
 
 //main HTTP handle function
 function handle(request, response) {
@@ -354,20 +355,31 @@ async function handle_get(request, response, params) {
       send_file(file, response, type);
     }
   }
-  //reflect request on to the daybreak API
-  else if (request.url.startsWith("/api/")){
-    call_api(request,response);
-  }
   else if (request.url.startsWith("/notifications")) {
     reply(response, JSON.stringify(notifications), "text/json");
   }
   else if (request.url.startsWith("/api/")) {
+    console.log("hello")
     var name = request.url.substring(5);
-    if (name in columns){
-      var sql = "SELECT username, resurrections FROM characters ORDER BY "+ name +" DESC LIMIT "+ params["count"] +";";
+    if (name==""){
+      name = "resurrections"
+    }
+    console.log(name)
+    if (columns.includes(name)){
+      console.log("we're in bois")
+      if (params.count) {
+        var count = params.count;
+      }
+      else {
+        var count = 10;
+      }
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" DESC LIMIT "+ count +";";
       var result = await query(sql);
       //build a string from the SQL result array
-      var content = result.map((x) => "(" + x.username + "," + x.resurrections + ")").join(", "); //TODO: fix jonny's dumb ass
+      console.log(result)
+      var json_object= result.map(function (value, index, array) )
+      var content = JSON.parse(result)
+      console.log(content)
       reply(response, content, "text/plain");
     }
   }

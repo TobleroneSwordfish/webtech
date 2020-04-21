@@ -90,23 +90,27 @@
   }
 </script>
 <div>
-<p id=resurrections></p>
+<p id=info></p>
 </div>
 <script>
   var flag = "inc";
   const colnames = {
-      name: 0,
-      res: 1
+    username: 0,
+    resurrections: 1,
+    suicides: 2,
+    teamkills: 3,
+    times_revived: 4
   }
 
   "use strict"
-  fetch("/?res=yes").then(handleRessurections);
+  fetch("/api/").then(handleRessurections);
   function handleRessurections(response) {
-    console.log(response)
     response.text().then(fillRessurections)
   }
   function fillRessurections(data) {
-    document.body.querySelector("#resurrections").innerHTML = stringToTable(data);
+    console.log("response is")
+    console.log(data)
+    document.body.querySelector("#info").innerHTML = stringToTable(data);
     document.getElementById("res").addEventListener('click', function(){
       if (flag == "inc"){
         sort("playerstats", "res", "dec");
@@ -124,10 +128,16 @@
 
   function stringToTable(data) {
     var array = parse(data);
-    var perrow = 2, // 3 cells per row
+    console.log("Array is")
+    console.log(array)
+    var perrow = 5
     html = "<table id = playerstats ><tr>";
     html += "<td id = name> Username </td>";
-    html += "<td id = res> # of resurrections </td> </tr> <tr>";  
+    html += "<td id = res> # of resurrections </td>";
+    html += "<td id = res> # of suicides </td>";
+    html += "<td id = res> # of teamkills </td>";
+    html += "<td id = res> # of times_revived </td>";
+    html += "</tr> <tr>";  
     for (var i=0; i<array.length; i++) {
       html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "</td>";
       if ((i+1)%perrow==0 && (i+1)!=array.length) {
@@ -172,7 +182,6 @@
   }
 
   function parse(str){
-    console.log(str);
     str=str.split(" ").join("");
     console.log(str);
     str=str.split("(").join("");
@@ -208,9 +217,8 @@
 <script>
   "use strict"
   var serviceID = "s:jtwebtech"
-  let socket = new WebSocket(window.location.hostname + "/notifications");
-  socket.onmessage = handle_notifications;
-  socket.onopen = open_notification_socket();
+  let notification_socket = new WebSocket( "ws://"+window.location.hostname + "/notifications");
+  notification_socket.onmessage = handle_notifications;
   function handle_notifications(){
     response.json().then(fill_notifications)
   }
