@@ -1,0 +1,41 @@
+<ul>
+<li>B for HTML</li>
+<li>B for CSS</li>
+<li>B for JS</li>
+<li>A for PNG</li>
+<li>A for SVG</li>
+<li>B for Server</li>
+<li>B for Database</li>
+<li>B for Dynamic pages</li>
+</ul>
+The project is a website for displaying live updating statistics about the game Planetside 2. Conveniently the game has an API located at http://census.daybreakgames.com/
+The server gets information from the API, stores it in the database and relays it to the client.
+<p>
+    HTML: We have one somewhat fleshed out page and one barebones, both have been validated using an HTML validator (http://users.skynet.be/mgueury/mozilla/)
+</p>
+<p>
+    CSS: We have stylesheets, animations and minimal to no styling in the HTML.
+</p>
+<p>
+    JS: We are using client side JS to fetch data from the server at runtime and display it on the page as well as establishing a websocket connection with the
+    server to receive notifications.
+</p>
+<p>
+    PNG: 
+</p>
+<p>
+    SVG:
+</p>
+<p>
+    Server: The server is built from the ground up using the JS HTTP library. Async-await has been used wherever possible including promisifying the database connection.
+    It acts as both a websocket client and server to communicate with the census API and client respectively.
+    The fanart page has a form for uploading image files, which are then stored and displayed back on the page. This is one area where we would be grateful for some
+    specific feedback on how to secure file uploads in Node, is there a library you would recommend, or a standard procedure we should follow?
+</p>
+<p>
+    Database: The database only has two tables so far, one storing general character data and the other being used to track the last person to teamkill each player.
+</p>
+<p>
+    Dynamic pages: The server can generate dynamic HTML pages by use of a small embedded templating language.
+    The language can substitute string values and also iteratively substitute arrays (there is currently a known issue preventing nested loops however)
+</p>

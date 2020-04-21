@@ -5,9 +5,10 @@
 <link rel="stylesheet" type="text/css" href="fanart.css">
 <meta charset="UTF-8"/>
 <title>we need a title</title>
+</head>
 
 <body>
-<form action="fanart" method="POST" enctype="multipart/form-data">
+<form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
     <input type="submit">
 </form>
@@ -17,6 +18,4 @@ $foreach(img in images)
 </div>
 endfor
 </body>
-
-</head>
 </html>

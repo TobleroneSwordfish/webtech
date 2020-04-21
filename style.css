@@ -151,3 +151,8 @@ ul.navbar li a:hover {
     text-overflow: auto;
     word-wrap: break-word;
 }
+
+#tidy_logo {
+    position: absolute;
+    bottom: 0px;
+}
