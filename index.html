@@ -120,10 +120,10 @@
   }
 
   function stringToTable(data) {
-    var array = parse(data);
-    console.log("Array is")
-    console.log(array)
-    var perrow = 5
+    var obj = JSON.parse(data);
+    console.log(obj);
+    var perrow = 5;
+    var html = "";
     html = "<table id = playerstats ><tr>";
     html += "<td id = name> Username </td>";
     html += "<td id = res> # of resurrections </td>";
@@ -131,12 +131,12 @@
     html += "<td id = res> # of teamkills </td>";
     html += "<td id = res> # of times_revived </td>";
     html += "</tr> <tr>";  
-    for (var i=0; i<array.length; i++) {
-      html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "<\/td>";
-      if ((i+1)%perrow==0 && (i+1)!=array.length) {
-        html += "<\/tr><tr>";
-      }
-    }
+    // for (var i=0; i<array.length; i++) {
+    //   html += "<td id = c"+ i +"r" + i%perrow + " >" + array[i] + "<\/td>";
+    //   if ((i+1)%perrow==0 && (i+1)!=array.length) {
+    //     html += "<\/tr><tr>";
+    //   }
+    // }
     html += "<\/tr><\/table>";
     return html;
   }
