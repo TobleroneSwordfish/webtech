@@ -14,7 +14,7 @@
 <div style="overflow: hidden; height: 20%;">
 <div class="container horizontal" style="width: 60%; height: 100%; float:left; margin-left: 20%;">
 <div class="container logo" style="transform-origin: top left; height: 100%;"><img src="/VSlogo.svg" class="logo-img center" alt="#########">
-<div class="top-left faction-info hidden">teeeeeeeext</div>
+<div class="top-left faction-info hidden">sample teeeeeeeext</div>
 </div>
 <div class="container logo" style="transform-origin: top center; height: 100%"><img src="/NClogo.svg" class="logo-img center" alt="#########"></div>
 <div class="container logo" style="transform-origin: top right; height: 100%"><img src="/TRlogo.svg" class="logo-img center" alt="#########"></div>
@@ -98,11 +98,11 @@
   }
 
   "use strict"
-  fetch("/api/").then(handleRessurections);
-  function handleRessurections(response) {
-    response.text().then(fillRessurections)
+  fetch("/api/").then(handleTable);
+  function handleTable(response) {
+    response.text().then(fillTable)
   }
-  function fillRessurections(data) {
+  function fillTable(data) {
     console.log("response is")
     console.log(data)
     document.body.querySelector("#info").innerHTML = stringToTable(data);
@@ -116,9 +116,7 @@
         flag ="inc"
       }
     })
-    document.getElementById("name").addEventListener('click', function(){
-      sort("playerstats", "name","inc");
-    })
+    
   }
 
   function stringToTable(data) {
