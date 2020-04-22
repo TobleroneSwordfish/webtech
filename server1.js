@@ -258,7 +258,7 @@ async function handle_revive(payload) {
   query(sql);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
   query(sql);
-  // send_notification("A player has been revived");
+  send_notification("A player has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
   var result = await query(getTKs);

@@ -9,31 +9,56 @@
 <li>B for Dynamic pages</li>
 </ul>
 The project is a website for displaying live updating statistics about the game Planetside 2. Conveniently the game has an API located at http://census.daybreakgames.com/
-The server gets information from the API, stores it in the database and relays it to the client.
+The server gets information from the API, stores it in a database and relays it to the client.
+We are Theano Xirouchaki (tx17079) and Jonny Hall (jh17979).
 <p>
     HTML: We have one somewhat fleshed out page and one barebones, both have been validated using an HTML validator (http://users.skynet.be/mgueury/mozilla/)
 </p>
 <p>
-    CSS: We have stylesheets, animations and minimal to no styling in the HTML.
+    CSS: We have stylesheets, animations and no inline styling in the HTML file.
 </p>
 <p>
     JS: We are using client side JS to fetch data from the server at runtime and display it on the page as well as establishing a websocket connection with the
     server to receive notifications.
 </p>
 <p>
-    PNG: 
+    PNG: We used Gimp to make some fanart for the game. We used filters, frames, layers, transparency, and drew with a couple weird brushes and combined images.
+    The original images and gimp files can be found in folders Image1-3 and the final pngs are also in the fanart page.
 </p>
 <p>
-    SVG:
+    SVG: We used Inkscape to recreate the symbols for the three factions of the game. We used the shape tool, simplification, path editing, grouping, transformations, and patterns.
+    Is there any advice you could give for how to reach A* on this?
 </p>
 <p>
     Server: The server is built from the ground up using the JS HTTP library. Async-await has been used wherever possible including promisifying the database connection.
     It acts as both a websocket client and server to communicate with the census API and client respectively.
     The fanart page has a form for uploading image files, which are then stored and displayed back on the page. This is one area where we would be grateful for some
     specific feedback on how to secure file uploads in Node, is there a library you would recommend, or a standard procedure we should follow?
+    The server also occasionally crashes upon initialising with the following error: 
+    
+    events.js:288
+    throw er; // Unhandled 'error' event
+    ^
+
+    Error: read ECONNRESET
+    at TLSWrap.onStreamRead (internal/stream_base_commons.js:205:27)
+    Emitted 'error' event on WebSocket instance at:
+    at ClientRequest.<anonymous> (C:\Users\Typhon\Documents\webtech\node_modules\ws\lib\websocket.js:555:15)
+    at ClientRequest.emit (events.js:311:20)
+    at TLSSocket.socketErrorListener (_http_client.js:426:9)
+    at TLSSocket.emit (events.js:311:20)
+    at emitErrorNT (internal/streams/destroy.js:92:8)
+    at emitErrorAndCloseNT (internal/streams/destroy.js:60:3)
+    at processTicksAndRejections (internal/process/task_queues.js:84:21) {
+    errno: 'ECONNRESET',
+    code: 'ECONNRESET',
+    syscall: 'read'
+    }
+    
+    We would really appreciate some help figuring out why.
 </p>
 <p>
-    Database: The database only has two tables so far, one storing general character data and the other being used to track the last person to teamkill each player.
+    Database: The database has two tables so far, one storing general character data and the other being used to track the last person to teamkill each player.
 </p>
 <p>
     Dynamic pages: The server can generate dynamic HTML pages by use of a small embedded templating language.
