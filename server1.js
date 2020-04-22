@@ -411,7 +411,7 @@ async function handle_get(request, response, params) {
       reply(response, content, "text/plain");
     }
   }
-  console.log();
+  log("");
 }
 
 function handle_post(request, response, params) {
