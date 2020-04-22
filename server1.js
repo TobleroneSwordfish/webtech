@@ -22,7 +22,7 @@ var wss;
 var notification_clients = [];
 
 //start the HTTP server
-start_server(8000);
+start_server(8080);
 //connect to the mySQL server using the credentials from the properties file
 var properties = read_yaml();
 connect_db(properties);
@@ -55,11 +55,11 @@ async function loadImages() {
 
 // Provide a service to localhost only.
 function start_server(port) {
-  const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
-  };
-  let server = HTTPS.createServer(options, handle);
+  // const options = {
+  //   key: fs.readFileSync('key.pem'),
+  //   cert: fs.readFileSync('cert.pem')
+  // };
+  let server = HTTP.createServer(handle);
   wss = new WebSocket.Server({server});
   wss.on("connection", wss_connection);
   console.log(wss);
@@ -250,7 +250,7 @@ async function handle_revive(payload) {
   query(sql);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
   query(sql);
-  // send_notification("A player has been revived");
+  send_notification("A player has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
   var result = await query(getTKs);

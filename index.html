@@ -73,7 +73,7 @@
   }
 
   function animEnd(event) {
-    console.log(event);
+    // console.log(event);
     if (this.classList.contains("contract")) {
       this.classList.remove("contract");
       toggleHidden(this, "faction-info", true)
@@ -103,11 +103,11 @@
     response.text().then(fillTable)
   }
   function fillTable(data) {
-    console.log("response is")
-    console.log(data)
+    // console.log("response is")
+    // console.log(data)
     document.body.querySelector("#info").innerHTML = stringToTable(data);
     for (let id in colnames){
-      console.log(id)
+      // console.log(id)
       document.getElementById(id).addEventListener('click', function(){
       // if (flag == "inc"){
         // fetch("/api/" + id + "?count=10&iod=inc").then(handleTable);
@@ -125,7 +125,7 @@
   function stringToTable(data) {
     data = data.split("null").join(0)
     var obj = JSON.parse(data);
-    console.log(obj);
+    // console.log(obj);
 
     var html = "";
     html = "<table id = playerstats ><tr>";
@@ -138,9 +138,9 @@
     for (var u in obj){
       var keys = Object.keys(obj[u])
       for (var p in colnames){
-        console.log(p)
+        // console.log(p)
         var property = obj[u][p]
-        console.log(property)
+        // console.log(property)
         html += "<td>" + obj[u][p] + "<\/td>";
       }
       html += "</tr> <tr>";  
@@ -150,7 +150,7 @@
   }
 
   function sort(tableid, sortid, iord){
-    console.log(sortid)
+    // console.log(sortid)
     var id = colnames[sortid];
     var table, rows, switching, i, x, y, shouldSwitch;
     table = document.getElementById(tableid);
@@ -186,12 +186,11 @@
 
   function parse(str){
     str=str.split(" ").join("");
-    console.log(str);
+    // console.log(str);
     str=str.split("(").join("");
-    console.log(str);
+    // console.log(str);
     str=str.split(")").join("");
-    console.log(str);
-    console.log(str);
+    // console.log(str);
     return str.split(",");
   }
 </script>
