@@ -22,7 +22,7 @@ var wss;
 var notification_clients = [];
 
 //start the HTTP server
-start_server(8000);
+start_server(8080);
 //connect to the mySQL server using the credentials from the properties file
 var properties = read_yaml();
 connect_db(properties);
@@ -55,14 +55,14 @@ async function loadImages() {
 
 // Provide a service to localhost only.
 function start_server(port) {
-  const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
-  };
-  let server = HTTPS.createServer(options, handle);
+  // const options = {
+  //   key: fs.readFileSync('key.pem'),
+  //   cert: fs.readFileSync('cert.pem')
+  // };
+  let server = HTTP.createServer(handle);
   wss = new WebSocket.Server({server});
   wss.on("connection", wss_connection);
-  console.log(wss);
+  // console.log(wss);
   server.listen(port);
 }
 
@@ -81,6 +81,14 @@ function send_notification(text) {
   notification.timestamp = new Date();
   for (var ws in notification_clients) {
     notification_clients[ws].send(JSON.stringify(notification));
+  }
+}
+
+var loggingLevel = 0;
+
+function log(text) {
+  if (loggingLevel) {
+    console.log(text);
   }
 }
 
@@ -154,7 +162,7 @@ function subscribe_events(socket) {
   var expTypes = [7, 53, 4, 5, 51];
   var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
   var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
-  console.log(eventNames);
+  // console.log(eventNames);
   socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
@@ -170,7 +178,7 @@ async function handle_event_response(event) {
     var payload = jsonData.payload;
     switch (payload.event_name) {
       case "GainExperience":
-        console.log(payload.experience_id);
+        log(payload.experience_id);
         //revive or squad revive
         if (payload.experience_id == 7 || payload.experience_id == 53) {
           handle_revive(payload);
@@ -197,7 +205,7 @@ async function handle_event_response(event) {
       default:
         return;
     }
-    console.log(payload.event_name);
+    log(payload.event_name);
   }
 }
 //returns the date in a format mysql can swallow
@@ -226,7 +234,7 @@ async function handle_death(payload) {
   var victim = await get_character_data(payload.character_id, "faction_id");
   var attacker = await get_character_data(payload.attacker_character_id, "faction_id");
   if (!(victim && attacker)) {
-    console.log("API cannot find player");
+    log("API cannot find player");
     return;
   }
   //death was teamkill
@@ -325,9 +333,9 @@ async function character_exists(id) {
 function handle(request, response) {
   var params = parse_parameters(request.url);
   
-  console.log("Method:", request.method);
-  console.log("URL:", request.url);
-  console.log("Params: ", params)
+  log("Method:", request.method);
+  log("URL:", request.url);
+  log("Params: ", params)
 
   if (request.method == "GET") {
     handle_get(request, response, params)
@@ -338,15 +346,15 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
-  console.log("params")
-  console.log(params)
+  log("params")
+  log(params)
   var columns = ["username", "suicides", "teamkills", "healing_ticks", "resurrections", "times_revived", "faction_id"];
   //check if the requested URL maps to a file
   var file = pageMap[request.url];
   if (file) {
-    console.log("Filename found: " + file);
+    log("Filename found: " + file);
     var type = mime.contentType(file);
-    console.log("Content-Type: " + type);
+    log("Content-Type: " + type);
     //if it's an HTML page, send it off for templating
     if (type.includes("text/html")) {
       send_page(file, response);
@@ -359,12 +367,11 @@ async function handle_get(request, response, params) {
     reply(response, JSON.stringify(notifications), "text/json");
   }
   else if (request.url.startsWith("/api/")) {
-    console.log("hello")
     var name = request.url.substring(5).split("?")[0];
     if (name==""){
       name = "resurrections"
     }
-    console.log(name)
+    // console.log(name)
     if (columns.includes(name)){
       if (params.count) {
         var count = params.count;
@@ -385,11 +392,11 @@ async function handle_get(request, response, params) {
       else {
         iord="DESC"
       }
-      console.log("fetching")
+      // console.log("fetching")
       var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" "+ iord +" LIMIT "+ count +";";
       var result = await query(sql);
-      console.log("AAA")
-      console.log(result)
+      // console.log("AAA")
+      // console.log(result)
       var jsonObject = {};
       result.forEach(function (value, index, array) {
         var obj = {};
@@ -419,29 +426,29 @@ function handle_post(request, response, params) {
 
 async function parse_fanart(err, fields, files) {
   if (err) throw err;
-  console.log("Files uploaded " + JSON.stringify(files));
+  log("Files uploaded " + JSON.stringify(files));
   await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
   loadImages();
 }
 
 //returns a dict mapping parameter names to values
 function parse_parameters(url){
-  console.log(url)
+  // console.log(url)
   var dict = {};
   if (url.includes("?")){
     var temp = url.split("?").pop();
-    console.log(temp)
+    // console.log(temp)
     let params = temp.split("&");  
-    console.log(params)
+    // console.log(params)
     for (var i in params){
       var p = params[i];
-      console.log(typeof(p));
+      // console.log(typeof(p));
       var name = p.substring(0,p.indexOf("="));
       var value = p.substring(p.indexOf("=")+1, p.length);
       dict[name] = value;
     }
   }
-  console.log(dict)
+  // console.log(dict)
   return dict;
 }
 
@@ -523,7 +530,7 @@ function template(content, templateMap) {
     }
     i = content.indexOf("$");
   }
-  console.log(content);
+  // console.log(content);
   return content;
 }
 
