@@ -9,8 +9,13 @@
 <ul class="navbar horizontal">
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
-<li><a href="/about.html">About</a></li>
-<li>logged in as ${username}</li>
+<li><a href="/login">
+$if(loggedin){
+  Logged in as ${username}
+}else{
+  Login
+}
+</a></li>
 </ul>
 <div class = "top">
 <div class = "container">

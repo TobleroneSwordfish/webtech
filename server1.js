@@ -53,6 +53,7 @@ var pageMap = {
   "/test":"test.txt",
   "/style.css":"style.css",
   "/fanart.css":"fanart.css",
+  "/loginstyle.css":"loginstyle.css",
   "/VSlogo.svg":"aliens.svg",
   "/TRlogo.svg":"sword.svg",
   "/NClogo.svg":"murica.svg"
@@ -478,12 +479,19 @@ async function handle_post(request, response, params) {
         }
       });
   }
+  else if (url == "/logout") {
+    request.session.reset();
+    await response.writeHead(302, {"Location":"/"});
+    response.end();
+  }
 }
 
 async function parse_fanart(err, fields, files) {
   if (err) throw err;
   log("Files uploaded " + JSON.stringify(files));
   await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+  var q = "INSERT INTO fanart(filename, approved) VALUES ('" + files.filename.name + "',False);";
+  query(q);
   loadImages();
 }
 
@@ -513,14 +521,16 @@ async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./" + filePath, "utf8");
   var templateMap = {};
   //here we add stuff to the template map to be sent to the client
+  templateMap.loggedin = request.session.loggedin;
+  if (templateMap.loggedin) {
+    templateMap.username = request.session.username;
+  }
   if (filePath == "index.html") {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;
-    templateMap["username"] = request.session.username;
   }
   else if (filePath == "fanart.html") {
     templateMap["images"] = fanart;
-    templateMap["test"] = "heh";
   }
   content = templating.template(content, templateMap);
   // console.log("Content: " + content);

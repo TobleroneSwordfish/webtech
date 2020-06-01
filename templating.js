@@ -11,20 +11,19 @@ function template(content, templateMap) {
             if (end != -1) {
                 var key = content.substring(i + 1, end);
                 if (templateMap[key]) {
-                    content = content.split("${" + key + "}").join(templateMap[key]);
+                    content = content.split("${" + key + "}").join(template(templateMap[key], templateMap));
                 }
                 else {
-                    log("Missing object in template map: " + key);
+                    console.log("Missing object in template map: " + key);
                     break;
                 }
             }
             else {
-                log("Missing }");
+                console.log("Missing }");
                 break;
             }
         }
         //foreach substitution
-        //currently does now allow for nested foreachs
         else if (content.substring(i).startsWith("foreach(")) {
             //console.log("templating foreach");
             var bracketEnd = content.indexOf(")", i);
@@ -58,6 +57,37 @@ function template(content, templateMap) {
             //replace the template with the templated blocks
             content = content.substring(0, i - 1) + newContent + content.substring(end + "}".length);
         }
+        else if (content.substring(i).startsWith("if(")) {
+            var bracketEnd = content.indexOf(")", i);
+            if (bracketEnd == -1) {
+                console.log("Missing ) to match if( at " + i);
+                break;
+            }
+            var boolName = content.substring(i + "if(".length, bracketEnd);
+            // if (templateMap[boolName] == undefined) {
+            //     console.log("Missing boolean to satisfy if at " + i);
+            // }
+            var bodyEnd = find_end(content, "{}", bracketEnd + 1);
+            var body = content.substring(bracketEnd + 2, bodyEnd - 1);
+            //there is an else case
+            var elseCase = false;
+            if (content.substring(bodyEnd).startsWith("else")) {
+                elseCase = true;
+                var elseStart = bodyEnd + "else".length;
+                var elseEnd = find_end(content, "{}", elseStart);
+                var elseBody = content.substring(elseStart + 1, elseEnd - 1);
+                bodyEnd = elseEnd;
+                if (!templateMap[boolName]) {
+                    content = content.substring(0, i - 1) + template(elseBody, templateMap) + content.substring(bodyEnd + 1);
+                }
+            }
+            if (templateMap[boolName]) {
+                content = content.substring(0, i - 1) + template(body, templateMap) + content.substring(bodyEnd + 1);
+            }
+            else if (!elseCase) {
+                content = content.substring(0, i - 1) + content.substring(bodyEnd + 1);
+            }
+        }
         else {
             console.log("lone $ found in templating");
             break;
@@ -76,6 +106,9 @@ function find_end(content, symbolPair, i) {
     i++;
     var bracketCount = 0;
     while (bracketCount >= 0) {
+        if (i == content.length) {
+            return -1
+        }
         if (content[i] == symbolPair[0]) {
             bracketCount++;
         }
@@ -83,9 +116,6 @@ function find_end(content, symbolPair, i) {
             bracketCount--;
         }
         i++;
-        if (i == content.length) {
-            return -1
-        }
     }
     return i;
 }

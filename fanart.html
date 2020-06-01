@@ -2,12 +2,24 @@
 <html xmlns="http://www.w3.org/1999/xhtml"
   lang="en-GB" xml:lang="en-GB">
 <head>
+<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="fanart.css">
 <meta charset="UTF-8"/>
 <title>we need a title</title>
 </head>
 
 <body>
+<ul class="navbar horizontal">
+  <li><a href="/">Home</a></li>
+  <li><a href="/fanart">Fanart</a></li>
+  <li><a href="/login">
+  $if(loggedin){
+    Logged in as ${username}
+  }else{
+    Login
+  }
+  </a></li>
+</ul>
 <form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
     <input type="submit">
