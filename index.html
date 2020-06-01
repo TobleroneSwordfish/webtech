@@ -19,11 +19,11 @@ $if(loggedin){
 </ul>
 <div class = "top">
 <div class = "container">
-<div class="logo transform_top_left"><img src="/VSlogo.svg" class="logo-img center" alt="Aliens">
+<div class="logo logo-left"><img src="/VSlogo.svg" class="logo-img center" alt="Aliens">
 <div class="faction-info hidden">aaaaaaaaaaaaaaaa fuckity fuck fuck fuck</div>
 </div>
-<div class="logo transform_top_center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
-<div class="logo transform_top_right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
+<div class="logo logo-center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
+<div class="logo logo-right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
 </div>
 <div class = "box">
 <div class = "box-title">NOTIFICATIONS</div>
@@ -56,37 +56,61 @@ $if(loggedin){
     }
   }
 
-  //make sure no other logo is expanded or currently animating
-  const checkActive = (logo) => !logo.classList.contains("expand") && !logo.classList.contains("contract") && !logo.classList.contains("expanded")
+  function getSide(obj) {
+    if (obj.classList.contains("logo-left")) {
+      return ["expand-left", "expanded-left","contract-left"];
+    }
+    else if (obj.classList.contains("logo-center")) {
+      return ["expand-center","expanded-center","contract-center"];
+    }
+    else if (obj.classList.contains("logo-right")) {
+      return ["expand-right","expanded-right","contract-right"];
+    }
+  }
+
   //expands
   function expand(event) {
-    if (this.classList.contains("expanded")) { //is already expanded
-      this.classList.remove("expanded");
-      this.classList.add("contract"); //start contracting
+    var tags = getSide(this);
+    var expandTag = tags[0];
+    var expandedTag = tags[1]
+    var contractTag = tags[2];
+    console.log(tags);
+    //make sure no other logo is expanded or currently animating
+    const checkActive = (logo) => !logo.classList.contains(expandTag) && !logo.classList.contains(contractTag) && !logo.classList.contains(expandedTag)
+
+    if (this.classList.contains(expandedTag)) { //is already expanded
+      this.classList.remove(expandedTag);
+      this.classList.add(contractTag); //start contracting
     } 
     
     else if (logos.every(checkActive)) {
       for (var i = 0; i < logos.length; i++) {
-        if (logos[i].classList.contains("expanded") || logos[i].classList.contains("expand")) {
-          logos[i].classList.remove("expanded");
-          logos[i].classList.remove("expand");
-          logos[i].classList.add("contract");
+        if (logos[i].classList.contains(expandedTag) || logos[i].classList.contains(expandTag)) {
+          logos[i].classList.remove(expandedTag);
+          logos[i].classList.remove(expandTag);
+          logos[i].classList.add(contractTag);
         }
       }
       toggleHidden(this, "faction-info", false)
-      this.classList.add("expand");
+      this.classList.add(expandTag);
+      this.classList.add("expanding");
     }
   }
 
   function animEnd(event) {
+    var tags = getSide(this);
+    var expandTag = tags[0];
+    var expandedTag = tags[1]
+    var contractTag = tags[2];
     // console.log(event);
-    if (this.classList.contains("contract")) {
-      this.classList.remove("contract");
+    if (this.classList.contains(contractTag)) {
+      this.classList.remove(contractTag);
+      this.classList.remove("expanding");
       toggleHidden(this, "faction-info", true)
     }
-    if (this.classList.contains("expand")) {
-      this.classList.remove("expand");
-      this.classList.add("expanded");
+    if (this.classList.contains(expandTag)) {
+      this.classList.remove(expandTag);
+      this.classList.add(expandedTag);
     }
   }
 </script>
