@@ -11,6 +11,7 @@ let path = require('path');
 let util = require('util');
 let sessions = require("client-sessions");
 let auth = require('./auth.js');
+let templating = require('./templating.js');
 const WebSocket = require('ws');
 
 // formidable.syncParse = util.promisify(formidable.parse);
@@ -521,79 +522,11 @@ async function send_page(filePath, request, response) {
     templateMap["images"] = fanart;
     templateMap["test"] = "heh";
   }
-  content = template(content, templateMap);
+  content = templating.template(content, templateMap);
   // console.log("Content: " + content);
   reply(response, content, 'text/html');
 }
 
-//takes the page content string and a map of variable names to values
-//returns the same content with the names changed to values
-function template(content, templateMap) {
-  var i = content.indexOf("$");
-  while(i != -1) {
-    //basic substitution
-    i++;
-    if (content[i] == '{') {
-      
-      var end = content.indexOf("}", i);
-      if (end != -1) {
-        var key = content.substring(i + 1, end);
-        if (templateMap[key]) {
-          content = content.split("${" + key + "}").join(templateMap[key]);
-        }
-        else {
-          log("Missing object in template map: " + key);
-          break;
-        }
-      }
-      else {
-        log("Missing }");
-        break;
-      }
-    }
-    //foreach substitution
-    //currently does now allow for nested foreachs
-    else if (content.substring(i).startsWith("foreach(")) {
-      //console.log("templating foreach");
-      var bracketEnd = content.indexOf(")", i);
-      if (bracketEnd == -1) {
-        console.log("malformed foreach templating at " + i);
-        break;
-      }
-      var inside = content.substring(i + "foreach(".length, bracketEnd).split(" in ");
-      var keyName = inside[0];
-      //console.log("key name = " + keyName);
-      var array = templateMap[inside[1]];
-      //console.log("array = " + array);
-      var end = content.indexOf("endfor", i);
-      if (end == -1) {
-        console.log("malformed foreach templating at " + i);
-        break;
-      }
-      var body = content.substring(bracketEnd + 1, end);
-      //console.log("body: " + body);
-      let newContent = "";
-      array.forEach(function(value, index, array) {
-        //recurse down to template the body
-        var map = {};
-        map[keyName] = value;
-        var block = template(body, map);
-        //console.log("block = " + block);
-        newContent = newContent.concat(block);
-      });
-      //console.log("new content = " + newContent);
-      //replace the template with the templated blocks
-      content = content.substring(0, i - 1) + newContent + content.substring(end + "endfor".length);
-    }
-    else {
-      console.log("lone $ found in templating");
-      break;
-    }
-    i = content.indexOf("$");
-  }
-  // console.log(content);
-  return content;
-}
 
 //just read and send a file normally
 async function send_file(filePath, response, mimeType) {
