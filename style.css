@@ -85,6 +85,7 @@ ul.navbar li a:hover {
 
 .transform_top_left {
     transform-origin: top left;
+    position: absolute;
 }
 
 .transform_top_center {
@@ -98,10 +99,11 @@ ul.navbar li a:hover {
 .logo {
     /* transform: scale(0.5); */
     height: 100%;
-    max-width:30%;
+    width:30%;
     display: inline-block;
     position: relative;
-    /* position: relative; */
+    text-align: center;
+    vertical-align:top;
 }
 
 .logo-img {
@@ -110,7 +112,7 @@ ul.navbar li a:hover {
 
 .expanded {
     z-index: 2000;
-    transform: scale(2.1);
+    transform: scale(4);
 }
 
 .expand {
@@ -133,7 +135,7 @@ ul.navbar li a:hover {
         transform: scale(1);
     }
     to {
-        transform: scale(2.1);
+        transform: scale(4);
     }
 }
 
@@ -147,9 +149,14 @@ ul.navbar li a:hover {
 }
 
 .faction-info {
-    max-width:100%;
-    text-overflow: auto;
-    word-wrap: break-word;
+    width:50%;
+    text-overflow:auto;
+    word-wrap: auto;
+    top: 25%;
+    left:25%;
+    text-align: center;
+    position: absolute;
+    display: inline-block;
 }
 
 #tidy_logo {
