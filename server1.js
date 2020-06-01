@@ -9,7 +9,18 @@ let fs = require('fs');
 let formidable = require('formidable');
 let path = require('path');
 let util = require('util');
+let sessions = require("client-sessions");
+let auth = require('./auth.js');
 const WebSocket = require('ws');
+
+// formidable.syncParse = util.promisify(formidable.parse);
+
+var requestSessionHandler = sessions({
+  cookieName: "session",
+  secret: "there are no wolves on fenris",
+  duration: 24 * 60 * 60 * 1000,
+  activeDuration: 1000 * 60 * 5
+});
 
 //database connection, global because passing it around seems pointless
 var con;
@@ -28,12 +39,16 @@ var properties = read_yaml();
 connect_db(properties);
 //set up promisified version of the query method so we can await it
 const query = util.promisify(con.query).bind(con);
+auth.setQueryMethod(query);
+
+startup();
 //subscribe to the exp gained events from the API
 request_events();
 
 var pageMap = {
   "/":"index.html",
   "/fanart":"fanart.html",
+  "/login":"login.html",
   "/test":"test.txt",
   "/style.css":"style.css",
   "/fanart.css":"fanart.css",
@@ -47,6 +62,11 @@ loadImages();
 var fanart = [];
 
 async function loadImages() {
+  var q = "SELECT filename, approved FROM fanart;";
+  var response = await query(q);
+  for (var i = 0; i < response.length; i++) {
+
+  }
   fanart = await fs.readdirSync("./Fanart");
   fanart.forEach(function(value, index, array) {
     pageMap["/" + value] = "Fanart" + path.sep + value;
@@ -149,6 +169,13 @@ async function try_fetch(url) {
       throw err;
     }
   }
+}
+
+//misc startup jobs and tests
+async function startup() {
+  auth.createUser("foo", "hunter2");
+  var auth_resp = await auth.authenticateUser("foo", "hunter2");
+  console.log(auth_resp);
 }
 
 //subscribe to census API events
@@ -331,6 +358,18 @@ async function character_exists(id) {
 
 //main HTTP handle function
 function handle(request, response) {
+  // sessions gubbins
+  requestSessionHandler(request, response, function () {
+    if (request.session.seenyou) {
+      response.setHeader('X-Seen-You', 'true');
+    } else {
+        // setting a property will automatically cause a Set-Cookie response
+        // to be sent
+        request.session.seenyou = true;
+        response.setHeader('X-Seen-You', 'false');
+    }
+  });
+
   var params = parse_parameters(request.url);
   
   log("Method:", request.method);
@@ -357,7 +396,7 @@ async function handle_get(request, response, params) {
     log("Content-Type: " + type);
     //if it's an HTML page, send it off for templating
     if (type.includes("text/html")) {
-      send_page(file, response);
+      send_page(file, request, response);
     }
     else { //otherwise just send the file
       send_file(file, response, type);
@@ -414,13 +453,29 @@ async function handle_get(request, response, params) {
   log("");
 }
 
-function handle_post(request, response, params) {
+async function handle_post(request, response, params) {
   var url = request.url;
   if (url == "/fanart") {
     var form = new formidable.IncomingForm();
     form.parse(request, parse_fanart);
-    response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
+    await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
+  }
+  else if (url == "/login") {
+    // console.log("login post received");
+    var form = new formidable.IncomingForm();
+    form.parse(request,
+      async function(err, fields, files) {
+        if (err) throw err;
+        console.log(fields);
+        var authResult = await auth.authenticateUser(fields.username, fields.password);
+        if (authResult) {
+          request.session.loggedin = true;
+          request.session.username = fields.username;
+          await response.writeHead(302, {"Location":"/"});
+          response.end();
+        }
+      });
   }
 }
 
@@ -453,13 +508,14 @@ function parse_parameters(url){
 }
 
 //template and send an HTML page
-async function send_page(filePath, response) {
+async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./" + filePath, "utf8");
   var templateMap = {};
   //here we add stuff to the template map to be sent to the client
   if (filePath == "index.html") {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;
+    templateMap["username"] = request.session.username;
   }
   else if (filePath == "fanart.html") {
     templateMap["images"] = fanart;
@@ -485,8 +541,13 @@ function template(content, templateMap) {
         if (templateMap[key]) {
           content = content.split("${" + key + "}").join(templateMap[key]);
         }
+        else {
+          log("Missing object in template map: " + key);
+          break;
+        }
       }
       else {
+        log("Missing }");
         break;
       }
     }
@@ -536,11 +597,6 @@ function template(content, templateMap) {
 
 //just read and send a file normally
 async function send_file(filePath, response, mimeType) {
-  // var stream = fs.createReadStream("./" + filePath);
-  // stream.on("open", function (fd) {
-  //   stream.pipe(response);
-  //   reply(response, null, mimeType);
-  // })
   var content
   if (mimeType.includes("text")) {
     content = await fs.readFileSync("./" + filePath, "utf8");
