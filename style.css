@@ -28,10 +28,10 @@ img{
 }
 
 .container{
-    width: 60%; 
+    width: 40%; 
     height: 100%; 
     float:left; 
-    margin-left: 20%;
+    margin-left: 30%;
 }
 
 .box {
@@ -83,17 +83,19 @@ ul.navbar li a:hover {
     background-color: darkseagreen;
 }
 
-.transform_top_left {
+.logo-left {
     transform-origin: top left;
-    position: absolute;
+    left:0;
 }
 
-.transform_top_center {
+.logo-center {
     transform-origin: top center;
+    left:4.5%;
 }
 
-.transform_top_right {
+.logo-right {
     transform-origin: top right;
+    float:right;
 }
 
 
@@ -135,32 +137,61 @@ ul.navbar li a:hover {
     max-width: 100%;
 }
 
-.expanded {
+.expanding {
     z-index: 2000;
+}
+
+.expanded-left {
+    transform: scale(4) translateX(-10%);
+}
+.expanded-center {
     transform: scale(4);
 }
-
-.expand {
-    z-index: 2000;
-    animation-name: expand;
-    animation-duration: 1.5s;
-    animation-direction: normal;
-    animation-fill-mode: forwards;
+.expanded-right {
+    transform: scale(4) translateX(10%);
 }
-.contract {
-    z-index: 2000;
-    animation-name: expand;
+
+.expand-left {
+    animation-name: expand-left;
+    animation-duration: 1.5s;
+}
+.contract-left {
+    animation-name: expand-left;
     animation-duration: 1.5s;
     animation-direction: reverse;
-    animation-fill-mode: forwards;
+}
+.expand-center {
+    animation-name: expand-center;
+    animation-duration: 1.5s;
+}
+.contract-center {
+    animation-name: expand-center;
+    animation-duration: 1.5s;
+    animation-direction: reverse;
+}
+.expand-right {
+    animation-name: expand-right;
+    animation-duration: 1.5s;
+}
+.contract-right {
+    animation-name: expand-right;
+    animation-duration: 1.5s;
+    animation-direction: reverse;
 }
 
-@keyframes expand {
-    from {
-        transform: scale(1);
+@keyframes expand-left {
+    100% {
+        transform: scale(4) translateX(-10%);
     }
-    to {
+}
+@keyframes expand-center {
+    100% {
         transform: scale(4);
+    }
+}
+@keyframes expand-right {
+    100% {
+        transform: scale(4) translateX(10%);
     }
 }
 
