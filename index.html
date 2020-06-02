@@ -114,15 +114,13 @@ $if(loggedin){
     }
   }
 </script>
-<div style="text-align: center;">
-<p id="info" style = "text-align: center;">
-  <table id = playerstats ><thead><tr>
-  <td id = username> Username </td>
-  <td id = resurrections> # of resurrections </td>
-  <td id = suicides> # of suicides </td>
-  <td id = teamkills> # of teamkills </td>
-  <td id = times_revived> # of times_revived </td> </tr></thead></table>
-</p>
+<div id="info">
+  <table id = playerstats><thead><tr>
+  <th id = username class="wide" > Username </th>
+  <th id = resurrections> # of resurrections </th>
+  <th id = suicides> # of suicides </th>
+  <th id = teamkills> # of teamkills </th>
+  <th id = times_revived> # of times_revived </th> </tr></thead></table>
 </div>
 <script>
   "use strict"
@@ -134,10 +132,11 @@ $if(loggedin){
     teamkills: 3,
     times_revived: 4
   }
-
+  var selectedid="resurrections";
   for (let id in colnames){
-      // console.log(id)
+      console.log(id)
       document.getElementById(id).addEventListener('click', function(){
+        selectedid=id;
         fetch("/api/" + id + "?count=10&iod=dec").then(handleTable);
       })
     }
@@ -148,18 +147,26 @@ $if(loggedin){
   }
   function fillTable(data) {
     resetTable();
-      data = data.split("null").join(0)
-      var obj = JSON.parse(data);
-      var table = document.getElementById("playerstats");
-      console.log(obj)
-      for (var u in obj){
-        console.log(u)
-        var row = table.insertRow(-1);
-        for (var p in colnames){
-          var cell = row.insertCell(-1);
-          cell.innerHTML = obj[u][p];
+    console.log("aaaaa")
+    console.log(selectedid)
+    console.log(colnames[selectedid])
+    document.getElementById(selectedid).classList.add("selected");
+    data = data.split("null").join(0)
+    var obj = JSON.parse(data);
+    var table = document.getElementById("playerstats");
+    table.appendChild(document.createElement('tbody'));
+    var table = document.getElementById("playerstats").getElementsByTagName("tbody")[0];
+    for (var u in obj){
+      console.log(u)
+      var row = table.insertRow(-1);
+      for (var p in colnames){
+        var cell = row.insertCell(-1);
+        cell.innerHTML = obj[u][p];
+        if (p==selectedid){
+          cell.classList.add("selected");
         }
       }
+    }
   }
   function resetTable(){
     var length = document.getElementById("playerstats").rows.length;
@@ -168,7 +175,7 @@ $if(loggedin){
       document.getElementById("playerstats").deleteRow(1);
     }
   }
-  
+
   function sort(tableid, sortid, iord){
     // console.log(sortid)
     var id = colnames[sortid];

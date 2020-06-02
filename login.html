@@ -23,9 +23,11 @@ $if(loggedin){
     <input type="submit" value="Logout" class="logout-button"></input>
 </form>
 }else{
-<form action="/login" method="post">
-    <input type="text" name="username">
-    <input type="password" name="password">
+<form action="/login" method="post" class="center">
+    Username: <br>
+    <input type="text" name="username"> <br>
+    Password: <br>
+    <input type="password" name="password"> <br>
     <input type="submit">
 </form>
 }

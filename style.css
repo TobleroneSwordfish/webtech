@@ -99,26 +99,43 @@ ul.navbar li a:hover {
 }
 
 
+
 #playerstats {
     font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
     border-collapse: collapse;
     display: inline-block;
+    table-layout: auto;
+    margin-top: 2%;
+    
 }
   
+.wide {
+    width: 300px;
+}
+
 #playerstats td, #playerstats th {
     border: 1px solid #ddd;
     padding: 8px;
+    border-collapse: collapse;
 }
   
 #playerstats tr:nth-child(even){background-color: #b3aeae;}
  
-#playerstats tr:hover {background-color: rgba(233, 96, 226, 0.479);}
-  
+#playerstats tbody>tr:hover {background-color: rgba(233, 96, 226, 0.479);}
+
+#playerstats thead {
+    cursor: pointer;
+}
+
+#playerstats tbody {
+    cursor: default;
+}
+
 #playerstats th {
     padding-top: 12px;
     padding-bottom: 12px;
     text-align: center;
-    background-color: #4CAF50;
+    background-color: rgb(175, 76, 162);
     color: white;
 }
 
@@ -202,6 +219,14 @@ ul.navbar li a:hover {
 }
 .hidden {
     visibility: hidden;
+}
+
+#info {
+    text-align: center;
+}
+
+.selected {
+    background-color: #9984a7;
 }
 
 .faction-info {
