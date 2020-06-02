@@ -96,6 +96,31 @@ ul.navbar li a:hover {
     transform-origin: top right;
 }
 
+
+#playerstats {
+    font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+    border-collapse: collapse;
+    display: inline-block;
+}
+  
+#playerstats td, #playerstats th {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+  
+#playerstats tr:nth-child(even){background-color: #b3aeae;}
+ 
+#playerstats tr:hover {background-color: rgba(233, 96, 226, 0.479);}
+  
+#playerstats th {
+    padding-top: 12px;
+    padding-bottom: 12px;
+    text-align: center;
+    background-color: #4CAF50;
+    color: white;
+}
+
+
 .logo {
     /* transform: scale(0.5); */
     height: 100%;

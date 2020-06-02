@@ -90,8 +90,15 @@ $if(loggedin){
     }
   }
 </script>
-<div>
-<p id="info"></p>
+<div style="text-align: center;">
+<p id="info" style = "text-align: center;">
+  <table id = playerstats ><thead><tr>
+  <td id = username> Username </td>
+  <td id = resurrections> # of resurrections </td>
+  <td id = suicides> # of suicides </td>
+  <td id = teamkills> # of teamkills </td>
+  <td id = times_revived> # of times_revived </td> </tr></thead></table>
+</p>
 </div>
 <script>
   "use strict"
@@ -104,57 +111,40 @@ $if(loggedin){
     times_revived: 4
   }
 
+  for (let id in colnames){
+      // console.log(id)
+      document.getElementById(id).addEventListener('click', function(){
+        fetch("/api/" + id + "?count=10&iod=dec").then(handleTable);
+      })
+    }
+
   fetch("/api/").then(handleTable);
   function handleTable(response) {
     response.text().then(fillTable)
   }
   function fillTable(data) {
-    // console.log("response is")
-    // console.log(data)
-    document.body.querySelector("#info").innerHTML = stringToTable(data);
-    for (let id in colnames){
-      // console.log(id)
-      document.getElementById(id).addEventListener('click', function(){
-      // if (flag == "inc"){
-        // fetch("/api/" + id + "?count=10&iod=inc").then(handleTable);
-        // flag="dec"
-      // }
-      // else {
-      //   console.log("hello")
-        fetch("/api/" + id + "?count=10&iod=dec").then(handleTable);
-      //   flag ="inc"
-      // }
-      })
-    }
-  }
-
-  function stringToTable(data) {
-    data = data.split("null").join(0)
-    var obj = JSON.parse(data);
-    // console.log(obj);
-
-    var html = "";
-    html = "<table id = playerstats ><tr>";
-    html += "<td id = username> Username </td>";
-    html += "<td id = resurrections> # of resurrections </td>";
-    html += "<td id = suicides> # of suicides </td>";
-    html += "<td id = teamkills> # of teamkills </td>";
-    html += "<td id = times_revived> # of times_revived </td>";
-    html += "</tr> <tr>";  
-    for (var u in obj){
-      var keys = Object.keys(obj[u])
-      for (var p in colnames){
-        // console.log(p)
-        var property = obj[u][p]
-        // console.log(property)
-        html += "<td>" + obj[u][p] + "<\/td>";
+    resetTable();
+      data = data.split("null").join(0)
+      var obj = JSON.parse(data);
+      var table = document.getElementById("playerstats");
+      console.log(obj)
+      for (var u in obj){
+        console.log(u)
+        var row = table.insertRow(-1);
+        for (var p in colnames){
+          var cell = row.insertCell(-1);
+          cell.innerHTML = obj[u][p];
+        }
       }
-      html += "</tr> <tr>";  
-    }
-    html += "<\/tr><\/table>";
-    return html;
   }
-
+  function resetTable(){
+    var length = document.getElementById("playerstats").rows.length;
+    for (var i=1; i<length; i++){
+      console.log(i)
+      document.getElementById("playerstats").deleteRow(1);
+    }
+  }
+  
   function sort(tableid, sortid, iord){
     // console.log(sortid)
     var id = colnames[sortid];
