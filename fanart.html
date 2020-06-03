@@ -20,13 +20,18 @@
   }
   </a></li>
 </ul>
+$if(loggedin){
 <form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
     <input type="submit">
 </form>
+}
 $foreach(img in images){
 <div>
-    <img src="${img}"/>
+    <img src="/fanart/${img}"/>
+    $if(loggedin){
+    <a class="approval-button" href="/fanart/delet?img=${img}">Delete this piece</a>
+    }
 </div>
 }
 </body>

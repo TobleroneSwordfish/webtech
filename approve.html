@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<link rel="stylesheet" type="text/css" href="style.css">
+<link rel="stylesheet" type="text/css" href="fanart.css">
+<meta charset="UTF-8">
+<title>Planetside 2 stats</title>
+</head>
+<body>
+<ul class="navbar horizontal">
+<li><a href="/">Home</a></li>
+<li><a href="/fanart">Fanart</a></li>
+<li>
+$if(loggedin){
+  <a href="/logout">Logged in as ${username}</a>
+}else{
+  <a href="/login">Login</a>
+}
+</li>
+</ul>
+$foreach(img in images){
+<div>
+    <img src="/fanart/unapproved/${img}"/>
+    <a class="approval-button" href="/fanart/approve?img=${img}">Approve this piece</a>
+    <a class="approval-button" href="/fanart/delet?img=${img}">Delete this piece</a>
+</div>
+}
+</body>
+</html>

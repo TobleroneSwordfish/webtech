@@ -35,6 +35,10 @@ function template(content, templateMap) {
             var keyName = inside[0];
             //console.log("key name = " + keyName);
             var array = templateMap[inside[1]];
+            if (array == undefined) {
+                console.log("Missing iterable for foreach templating");
+                break;
+            }
             //console.log("array = " + array);
             var end = find_end(content, "{}", bracketEnd + 1);
             if (end == -1) {

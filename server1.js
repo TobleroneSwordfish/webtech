@@ -48,6 +48,7 @@ request_events();
 
 var pageMap = {
   "/":"index.html",
+  "/favicon.ico":"favicon.ico", //we have to serve this locally because deybreak's cdn is weird
   "/fanart":"fanart.html",
   "/login":"login.html",
   "/test":"test.txt",
@@ -59,20 +60,70 @@ var pageMap = {
   "/NClogo.svg":"murica.svg"
 }
 
-loadImages();
+var adminPageMap = {
+  "/admin":"admin.html",
+  "/approve":"approve.html"
+}
 
-var fanart = [];
+loadImages();
 
 async function loadImages() {
   var q = "SELECT filename, approved FROM fanart;";
   var response = await query(q);
   for (var i = 0; i < response.length; i++) {
-
+    loadArt(response[i].filename, response[i].approved);
   }
-  fanart = await fs.readdirSync("./Fanart");
-  fanart.forEach(function(value, index, array) {
-    pageMap["/" + value] = "Fanart" + path.sep + value;
+  var files = await fs.readdirSync("./Fanart");
+  files.forEach(function(value, index, array) {
+    if (!response.some((element) => element.filename == value)) {
+      loadArt(value);
+      storeArt(value);
+    }
   });
+}
+
+function loadArt(filename, isapproved) {
+  if (isapproved == undefined) {
+    isapproved = false;
+  }
+  var filePath = "Fanart" + path.sep + filename;
+  if (isapproved) {
+    pageMap["/fanart/" + filename] = filePath;
+  }
+  else {
+    adminPageMap["/fanart/unapproved/" + filename] = filePath;
+  }
+}
+async function storeArt(filename, isapproved) {
+  if (isapproved == undefined) {
+    isapproved = false;
+  }
+  var q = "INSERT IGNORE INTO fanart (filename, approved) VALUES (?, ?);";
+  await query(q, [filename, isapproved]);
+}
+function approveArt(filename, approve) {
+  if (approve == undefined) {
+    approve = true;
+  }
+  var q = "UPDATE fanart SET approved=? WHERE filename=?;";
+  query(q, [approve, filename]);
+  loadArt(filename, true);
+}
+function unapproveArt(filename) {
+  approveArt(filename, false);
+}
+async function deleteArt(filename) {
+  var q = "SELECT filename FROM fanart WHERE filename = ?;";
+  var resp = await query(q, [filename]);
+  if (resp.length > 0) {
+    try {
+      await fs.unlinkSync(__dirname + "/Fanart/" + resp[0].filename);
+    } catch (error) {
+      console.log("Unable to delete art: " + error);
+    }
+    var q = "DELETE FROM fanart WHERE filename = ?;";
+    query(q, [resp[0].filename]);
+  }
 }
 
 // Provide a service to localhost only.
@@ -146,6 +197,10 @@ function sleep(ms) {
 }
 
 async function try_fetch(url) {
+  if (url == "http://www.station.sony.com/services/en/sorry.htm") {
+    console.log("Redirect to old SOE website, ignoring");
+    return;
+  }
   try {
     var resp = await fetch(url);
     return resp;
@@ -157,27 +212,36 @@ async function try_fetch(url) {
     else if (error.name == "AbortError") {
       return;
     }
-    else if (error.name == "FetchError" && err.code == "ECONNRESET") {
-      await sleep(200);
-      try {
-        var resp = await fetch(url);
-        return resp;
+    else if (error.name == "FetchError")
+      if (err.code == "ECONNRESET") {
+        await sleep(200);
+        try {
+          var resp = await fetch(url);
+          return resp;
+        }
+        catch (err) {
+          return;
+        }
       }
-      catch (err) {
+      //for some ungodly reason, occasionally the census API tries to send us to an error page on the
+      //old SOE site (company that used to run Planetside 2, now non-existent)
+      //we're handling it here by simply complaining about it and moving on, as the loss of one request isn't too important
+      else if (err.message == "request to http://www.station.sony.com/services/en/sorry.htm failed, reason: getaddrinfo EAI_AGAIN www.station.sony.com") {
+        console.log("Census API tried to redirect us to the old SOE site, request ignored.");
         return;
       }
-    }
-    else {
-      throw err;
-    }
+      else {
+        throw err;
+      }
   }
 }
 
 //misc startup jobs and tests
 async function startup() {
-  auth.createUser("foo", "hunter2");
-  var auth_resp = await auth.authenticateUser("foo", "hunter2");
-  console.log(auth_resp);
+  auth.createUser("foo", "hunter2", true);
+  auth.createUser("bar", "hunter3");
+  // var auth_resp = await auth.authenticateUser("foo", "hunter2");
+  // console.log(auth_resp);
 }
 
 //subscribe to census API events
@@ -215,8 +279,8 @@ async function handle_event_response(event) {
         //heal, heal assist or squad heal
         else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
           await create_if_new(payload.character_id);
-          var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = " + payload.character_id + ";";
-          var resp = await query(sql);
+          var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = ?;";
+          var resp = await query(sql, [payload.character_id]);
         }
         else {
           return;
@@ -248,16 +312,16 @@ function sql_timestamp(date) {
 
 async function handle_login(payload) {
   await create_if_new(payload.character_id);
-  var sql = "UPDATE characters SET last_login = '" + sql_timestamp(new Date()) + "' WHERE id = " + payload.character_id + ";";
-  query(sql);
+  var sql = "UPDATE characters SET last_login = ? WHERE id = ?;";
+  query(sql, [sql_timestamp(new Date()), payload.character_id]);
 }
 
 async function handle_death(payload) {
   //death was suicide
   if (payload.character_id == payload.attacker_character_id) {
     await create_if_new(payload.attacker_character_id);
-    var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = " + payload.character_id + ";";
-    query(suicide);
+    var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = ?;";
+    query(suicide, [payload.character_id]);
     return;
   }
   var victim = await get_character_data(payload.character_id, "faction_id");
@@ -269,12 +333,12 @@ async function handle_death(payload) {
   //death was teamkill
   if (victim.faction_id == attacker.faction_id) {
     await create_if_new(payload.attacker_character_id);
-    var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = " + payload.attacker_character_id + ";";
-    query(updateCount);
-    var clearTKs = "DELETE FROM teamkills WHERE victim_id = " + payload.character_id + ";";
-    await query(clearTKs);
-    var insertTK =  "INSERT INTO teamkills (victim_id, attacker_id) VALUES (" + payload.character_id + ", " + payload.attacker_character_id + ");";
-    query(insertTK);
+    var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = ?;";
+    query(updateCount, [payload.attacker_character_id]);
+    var clearTKs = "DELETE FROM teamkills WHERE victim_id = ?;";
+    await query(clearTKs, [payload.character_id]);
+    var insertTK =  "INSERT INTO teamkills (victim_id, attacker_id) VALUES (?, ?);";
+    query(insertTK, [payload.character_id, payload.attacker_character_id]);
   }
 }
 
@@ -283,23 +347,23 @@ async function handle_revive(payload) {
   await create_if_new(payload.character_id);
   await create_if_new(payload.other_id);
   //actually increase the resurrections count
-  var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = "+ payload.character_id +";";
-  query(sql);
-  sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = "+ payload.other_id +";";
-  query(sql);
+  var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = ?;";
+  query(sql, [payload.character_id]);
+  sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
+  query(sql, [payload.other_id]);
   send_notification("A player has been revived");
   //check if this is a forgiveness revive
-  var getTKs = "SELECT COUNT(1) FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
-  var result = await query(getTKs);
-  if (result[0]["COUNT(1)"] > 0) {
-    var getName = "SELECT username FROM characters WHERE id = ";
-    var victimName = await query(getName + payload.other_id + ";");
-    var attackerName = await query(getName + payload.character_id + ";");
+  var getTKs = "SELECT id FROM teamkills WHERE victim_id=? AND attacker_id=?;";
+  var result = await query(getTKs, [payload.other_id, payload.character_id]);
+  if (result.length > 0) {
+    var getName = "SELECT username FROM characters WHERE id = ?;";
+    var victimName = await query(getName, [payload.other_id]);
+    var attackerName = await query(getName, [payload.character_id]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
     console.log(text);
     send_notification(text);
-    var forgive = "DELETE FROM teamkills WHERE victim_id=" + payload.other_id + " AND attacker_id=" + payload.character_id + ";";
-    query(forgive);
+    var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
+    query(forgive, [payload.other_id, payload.character_id]);
   }
 }
 
@@ -342,20 +406,20 @@ async function create_character(id){
   else {
     //console.log(character);
     //for some reason this is the best way to do duplicate safe insertion
-    var sql = "INSERT INTO characters(id, username, faction_id) VALUES (" + id + ",'" + character.name.first +"'," + character.faction_id + ") ON DUPLICATE KEY UPDATE id=id;";
-    await query(sql);
+    var sql = "INSERT IGNORE INTO characters (id, username, faction_id) VALUES (?,?,?);";
+    await query(sql, [Number(id), character.name.first, character.faction_id]);
   }
 }
 
 async function delete_character(id) {
-  var deletChar = "DELETE FROM characters WHERE id = " + id;
-  var deletTKs = "DELETE FROM teamkills WHERE victim_id = " + id + " OR attacker_id = " + id + ";";
-  query(deletChar);
-  query(deletTKs);
+  var deletChar = "DELETE FROM characters WHERE id = ?;";
+  var deletTKs = "DELETE FROM teamkills WHERE victim_id = ? OR attacker_id = ?;";
+  query(deletChar, [id]);
+  query(deletTKs, [id, id]);
 }
 async function character_exists(id) {
-  var results = await query("SELECT COUNT(id) FROM characters WHERE id =" + id + ";");
-  return results[0]["COUNT(id)"] != 0;
+  var results = await query("SELECT id FROM characters WHERE id =?;", [id]);
+  return results.length > 0;
 }
 
 //main HTTP handle function
@@ -389,9 +453,21 @@ function handle(request, response) {
 async function handle_get(request, response, params) {
   log("params")
   log(params)
+  log("get request with url: " + request.url)
+
   var columns = ["username", "suicides", "teamkills", "healing_ticks", "resurrections", "times_revived", "faction_id"];
+
   //check if the requested URL maps to a file
   var file = pageMap[request.url];
+  if (adminPageMap[request.url]) {
+    if (request.session.admin) {
+      file = adminPageMap[request.url];
+    }
+    else { //forboden
+      response.writeHead(403).end();
+      return;
+    }
+  }
   if (file) {
     log("Filename found: " + file);
     var type = mime.contentType(file);
@@ -452,12 +528,32 @@ async function handle_get(request, response, params) {
       reply(response, content, "text/plain");
     }
   }
+  else if (request.url.startsWith("/logout")) {
+    log("logging out")
+    request.session.reset();
+    redirect(response, "/");
+  }
+  else if (request.url.startsWith("/fanart/approve")) {
+    if (request.session.loggedin && request.session.admin) {
+        approveArt(params.img);
+        reload(request, response);
+    }
+  }
+  else if (request.url.startsWith("/fanart/delet")) {
+    if (request.session.loggedin && request.session.admin) {
+      deleteArt(params.img);
+      reload(request, response);
+    }
+  }
   log("");
 }
 
 async function handle_post(request, response, params) {
   var url = request.url;
   if (url == "/fanart") {
+    if (!request.session.loggedin) {
+      return;
+    }
     var form = new formidable.IncomingForm();
     form.parse(request, parse_fanart);
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
@@ -474,15 +570,13 @@ async function handle_post(request, response, params) {
         if (authResult) {
           request.session.loggedin = true;
           request.session.username = fields.username;
+          if (authResult == "admin") {
+            request.session.admin = true;
+          }
           await response.writeHead(302, {"Location":"/"});
           response.end();
         }
       });
-  }
-  else if (url == "/logout") {
-    request.session.reset();
-    await response.writeHead(302, {"Location":"/"});
-    response.end();
   }
 }
 
@@ -490,9 +584,17 @@ async function parse_fanart(err, fields, files) {
   if (err) throw err;
   log("Files uploaded " + JSON.stringify(files));
   await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
-  var q = "INSERT INTO fanart(filename, approved) VALUES ('" + files.filename.name + "',False);";
-  query(q);
-  loadImages();
+  loadArt(files.filename.name);
+  storeArt(files.filename.name)
+}
+
+async function redirect(response, location) {
+  await response.writeHead(302, {"Location":location});
+  await response.end();
+}
+
+async function reload(request, response) {
+  await redirect(response, request.headers.referer);
 }
 
 //returns a dict mapping parameter names to values
@@ -516,6 +618,12 @@ function parse_parameters(url){
   return dict;
 }
 
+async function getFanartNames(approved) {
+  var q = "SELECT filename FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
+  var result = await query(q);
+  return result.map((element) => element.filename); //convert the SQL results into a simple array
+}
+
 //template and send an HTML page
 async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./" + filePath, "utf8");
@@ -530,7 +638,10 @@ async function send_page(filePath, request, response) {
     templateMap["time"] = time;
   }
   else if (filePath == "fanart.html") {
-    templateMap["images"] = fanart;
+    templateMap["images"] = await getFanartNames(true);
+  }
+  else if (filePath == "approve.html") {
+    templateMap["images"] = await getFanartNames(false);
   }
   content = templating.template(content, templateMap);
   // console.log("Content: " + content);
