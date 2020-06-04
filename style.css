@@ -29,21 +29,36 @@ img{
 .top {
     overflow: visible; 
     height: 20%; 
-    margin-top: 1%;
+    width: 60%;
+    margin-top: 0%;
+    margin:auto;
 }
 
+.dark {
+    width: 80%;
+    overflow: scroll;
+    height:95%;
+    margin-top:-1%;
+    margin-left:10%;
+    background-color: rgba(58, 58, 58, 0.829);
+    -ms-overflow-style: none;
+}
+.dark::-webkit-scrollbar {
+    display: none;
+}
 .container{
-    width: 40%; 
+    width: 60%; 
     height: 100%; 
     float:left; 
-    margin-left: 30%;
+    margin-left: 20%;
+    margin-top:0%;
 }
 
 .box {
-    float:right; 
-    width: 18%; 
-    height: 90%; 
+    width: 50%; 
+    height: 10%; 
     border: 4px solid rgb(76, 15, 133);
+    margin:auto;
 }
 
 .box-title {
@@ -110,7 +125,7 @@ ul.navbar li a:hover {
     border-collapse: collapse;
     display: inline-block;
     table-layout: auto;
-    margin-top: 2%;
+    margin-top: 0px;
     
 }
   
