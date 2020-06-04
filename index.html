@@ -17,6 +17,7 @@ $if(loggedin){
 }
 </li>
 </ul>
+<div class="dark">
 <div class = "top">
 <div class = "container">
 <div class="logo logo-left"><img src="/VSlogo.svg" class="logo-img center" alt="Aliens">
@@ -25,9 +26,26 @@ $if(loggedin){
 <div class="logo logo-center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
 <div class="logo logo-right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
 </div>
+</div>
+<br>
 <div class = "box">
-<div class = "box-title">NOTIFICATIONS</div>
-<div class = "box-content" id="notifications"></div>
+  <div class = "box-title">NOTIFICATIONS</div>
+  <div class = "box-content" id="notifications"></div>
+</div>
+<select id="count" name="# of players">
+  <option value="10" selected>10</option>
+  <option value="20">20</option>
+  <option value="50">50</option>
+  <option value="100">100</option>
+</select>
+<div id="info">
+  <table id = playerstats><thead><tr>
+  <th>Index</th>
+  <th id = username class="wide" > Username </th>
+  <th id = resurrections> # of resurrections </th>
+  <th id = suicides> # of suicides </th>
+  <th id = teamkills> # of teamkills </th>
+  <th id = times_revived> # of times_revived </th> </tr></thead></table>
 </div>
 </div>
 <script>
@@ -41,6 +59,7 @@ $if(loggedin){
       logos[i].addEventListener("animationend", animEnd);
     }
   }
+  
   //adds or removes the "hidden" class on child objects of node that have class objClass according to state
   function toggleHidden(node, objClass, state) {
     var nodes = node.getElementsByClassName(objClass)
@@ -113,18 +132,7 @@ $if(loggedin){
       this.classList.add(expandedTag);
     }
   }
-</script>
-<div id="info">
-  <table id = playerstats><thead><tr>
-  <th id = username class="wide" > Username </th>
-  <th id = resurrections> # of resurrections </th>
-  <th id = suicides> # of suicides </th>
-  <th id = teamkills> # of teamkills </th>
-  <th id = times_revived> # of times_revived </th> </tr></thead></table>
-</div>
-<script>
-  "use strict"
-  // var flag = "inc";
+  
   const colnames = {
     username: 0,
     resurrections: 1,
@@ -133,23 +141,26 @@ $if(loggedin){
     times_revived: 4
   }
   var selectedid="resurrections";
+  var count=10;
   for (let id in colnames){
       console.log(id)
       document.getElementById(id).addEventListener('click', function(){
         selectedid=id;
-        fetch("/api/" + id + "?count=10&iod=dec").then(handleTable);
+        fetch("/api/" + selectedid + "?count=" + count + "&iod=dec").then(handleTable);
       })
     }
-
+  var dropdown = document.getElementById("count");
+  dropdown.addEventListener('change', function(){
+    count=dropdown.options[dropdown.selectedIndex].value;
+    fetch("/api/" + selectedid + "?count=" + dropdown.options[dropdown.selectedIndex].value+ "&iod=dec").then(handleTable);
+  })
   fetch("/api/").then(handleTable);
   function handleTable(response) {
+    console.log("hello")
     response.text().then(fillTable)
   }
   function fillTable(data) {
     resetTable();
-    console.log("aaaaa")
-    console.log(selectedid)
-    console.log(colnames[selectedid])
     document.getElementById(selectedid).classList.add("selected");
     data = data.split("null").join(0)
     var obj = JSON.parse(data);
@@ -159,6 +170,8 @@ $if(loggedin){
     for (var u in obj){
       console.log(u)
       var row = table.insertRow(-1);
+      var cell = row.insertCell(-1);
+      cell.innerHTML = parseInt(u)+1;
       for (var p in colnames){
         var cell = row.insertCell(-1);
         cell.innerHTML = obj[u][p];
@@ -231,9 +244,9 @@ $if(loggedin){
   }
   function fill_notifications(data) {
     var box = document.body.querySelector("#notifications");
-    var newElement = document.createElement("div");
-    newElement.innerText = data.text;
-    box.insertBefore(newElement, box.childNodes[0]);
+    // var newElement = document.createElement("div");
+    // newElement.innerText = data.text;
+    box.innerHTML=data.text;
   }
 </script>
 <a id="tidy_logo" href="http://users.skynet.be/mgueury/mozilla/">
