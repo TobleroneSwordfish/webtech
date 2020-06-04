@@ -4,6 +4,7 @@
   "description": "",
   "main": "server1.js",
   "dependencies": {
+    "bcrypt": "^4.0.1",
     "client-sessions": "^0.8.0",
     "formidable": "^1.2.2",
     "fs": "0.0.1-security",
