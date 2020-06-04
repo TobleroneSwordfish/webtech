@@ -497,24 +497,10 @@ async function handle_get(request, response, params) {
       else {
         var count = 10;
       }
-      var iord;
-      if (params.iord){
-        // if (params.iord=="inc"){
-        //   console.log("Ascending")
-        //   iord="ASC"
-        // }
-        // else {
-          iord="DESC"
-      //   }
-      }
-      else {
-        iord="DESC"
-      }
+      var iord = "DESC";
       // console.log("fetching")
-      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" "+ iord +" LIMIT "+ count +";";
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived, faction_id FROM characters ORDER BY "+ name +" "+ iord +" LIMIT "+ count +";";
       var result = await query(sql);
-      // console.log("AAA")
-      // console.log(result)
       var jsonObject = {};
       result.forEach(function (value, index, array) {
         var obj = {};

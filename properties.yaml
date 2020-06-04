@@ -1,5 +1,6 @@
-password: "swordfish"
-host: "localhost"
-user: "root"
+db_password: "swordfish"
+db_host: "localhost"
+db_user: "root"
+http_port: "8080"
 #possible IDs are 1: Connery, 10: Miller, 13: Cobalt, 17: Emerald, 19: Jaeger, 25: Briggs (RIP), 40: SolTech
 world: 1
