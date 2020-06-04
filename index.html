@@ -9,13 +9,13 @@
 <ul class="navbar horizontal">
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
-<li><a href="/login">
+<li>
 $if(loggedin){
-  Logged in as ${username}
+  <a href="/logout">Logged in as ${username}</a>
 }else{
-  Login
+  <a href="/login">Login</a>
 }
-</a></li>
+</li>
 </ul>
 <div class = "top">
 <div class = "container">

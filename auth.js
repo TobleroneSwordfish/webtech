@@ -1,23 +1,26 @@
 const bcrypt = require("bcrypt")
 const saltRounds = 10;
 var query;
-// exports.test1 = 
-// function test1() {
-//     console.log("hai")
-// }
+
 exports.setQueryMethod = method => query = method;
 
-exports.createUser = async function(username, password) {
+exports.createUser = async function(username, password, admin) {
+    if (admin == undefined) {
+        admin = false;
+    }
     hash = await bcrypt.hashSync(password, saltRounds);
-    var q = "INSERT INTO users (username, password_hash) VALUES ('" + username + "', '" + hash + "');";
+    var q = "INSERT INTO users (username, password_hash, admin) VALUES ('" + username + "', '" + hash + "', " + admin + ") ON DUPLICATE KEY UPDATE admin=" + admin + ";";
     var resp = await query(q);
 }
 
 exports.authenticateUser = async function(username, password) {
-    var q = "SELECT password_hash FROM users WHERE username = '" + username + "';";
+    var q = "SELECT password_hash, admin FROM users WHERE username = '" + username + "';";
     var resp = await query(q);
     if (resp.length > 0) {
         var result = await bcrypt.compareSync(password, resp[0].password_hash);
+        if (result && resp[0].admin) {
+            return "admin";
+        }
         return result;
     }
     return false;
