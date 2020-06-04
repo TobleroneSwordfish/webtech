@@ -281,7 +281,7 @@ async function handle_event_response(event) {
         else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
           await create_if_new(payload.character_id);
           var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = ?;";
-          var resp = await query(sql, [payload.character_id]);
+          var resp = await query(sql, [Number(payload.character_id)]);
         }
         else {
           return;
@@ -314,7 +314,7 @@ function sql_timestamp(date) {
 async function handle_login(payload) {
   await create_if_new(payload.character_id);
   var sql = "UPDATE characters SET last_login = ? WHERE id = ?;";
-  query(sql, [sql_timestamp(new Date()), payload.character_id]);
+  query(sql, [sql_timestamp(new Date()), Number(payload.character_id)]);
 }
 
 async function handle_death(payload) {
@@ -322,7 +322,7 @@ async function handle_death(payload) {
   if (payload.character_id == payload.attacker_character_id) {
     await create_if_new(payload.attacker_character_id);
     var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = ?;";
-    query(suicide, [payload.character_id]);
+    query(suicide, [Number(payload.character_id)]);
     return;
   }
   var victim = await get_character_data(payload.character_id, "faction_id");
@@ -335,11 +335,11 @@ async function handle_death(payload) {
   if (victim.faction_id == attacker.faction_id) {
     await create_if_new(payload.attacker_character_id);
     var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = ?;";
-    query(updateCount, [payload.attacker_character_id]);
+    query(updateCount, [Number(payload.attacker_character_id)]);
     var clearTKs = "DELETE FROM teamkills WHERE victim_id = ?;";
-    await query(clearTKs, [payload.character_id]);
+    await query(clearTKs, [Number(payload.character_id)]);
     var insertTK =  "INSERT INTO teamkills (victim_id, attacker_id) VALUES (?, ?);";
-    query(insertTK, [payload.character_id, payload.attacker_character_id]);
+    query(insertTK, [Number(payload.character_id), Number(payload.attacker_character_id)]);
   }
 }
 
@@ -349,22 +349,22 @@ async function handle_revive(payload) {
   await create_if_new(payload.other_id);
   //actually increase the resurrections count
   var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = ?;";
-  query(sql, [payload.character_id]);
+  query(sql, [Number(payload.character_id)]);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
-  query(sql, [payload.other_id]);
+  query(sql, [Number(payload.other_id)]);
   send_notification("A player has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT id FROM teamkills WHERE victim_id=? AND attacker_id=?;";
-  var result = await query(getTKs, [payload.other_id, payload.character_id]);
+  var result = await query(getTKs, [Number(payload.other_id), Number(payload.character_id)]);
   if (result.length > 0) {
     var getName = "SELECT username FROM characters WHERE id = ?;";
-    var victimName = await query(getName, [payload.other_id]);
-    var attackerName = await query(getName, [payload.character_id]);
+    var victimName = await query(getName, [Number(payload.other_id)]);
+    var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
     console.log(text);
     send_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
-    query(forgive, [payload.other_id, payload.character_id]);
+    query(forgive, [Number(payload.other_id), Number(payload.character_id)]);
   }
 }
 
@@ -405,8 +405,6 @@ async function create_character(id){
     //console.log("character does not exist")
   }
   else {
-    //console.log(character);
-    //for some reason this is the best way to do duplicate safe insertion
     var sql = "INSERT IGNORE INTO characters (id, username, faction_id) VALUES (?,?,?);";
     await query(sql, [Number(id), character.name.first, character.faction_id]);
   }
@@ -415,11 +413,11 @@ async function create_character(id){
 async function delete_character(id) {
   var deletChar = "DELETE FROM characters WHERE id = ?;";
   var deletTKs = "DELETE FROM teamkills WHERE victim_id = ? OR attacker_id = ?;";
-  query(deletChar, [id]);
-  query(deletTKs, [id, id]);
+  query(deletChar, [Number(id)]);
+  query(deletTKs, [Number(id), Number(id)]);
 }
 async function character_exists(id) {
-  var results = await query("SELECT id FROM characters WHERE id =?;", [id]);
+  var results = await query("SELECT id FROM characters WHERE id =?;", [Number(id)]);
   return results.length > 0;
 }
 
@@ -511,8 +509,8 @@ async function handle_get(request, response, params) {
         iord="DESC"
       }
       // console.log("fetching")
-      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY "+ name +" "+ iord +" LIMIT "+ count +";";
-      var result = await query(sql);
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY ? "+ iord +" LIMIT ?;";
+      var result = await query(sql, [name, Number(count)]);
       // console.log("AAA")
       // console.log(result)
       var jsonObject = {};
