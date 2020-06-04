@@ -56,7 +56,9 @@ var pageMap = {
   "/loginstyle.css":"loginstyle.css",
   "/VSlogo.svg":"aliens.svg",
   "/TRlogo.svg":"sword.svg",
-  "/NClogo.svg":"murica.svg"
+  "/NClogo.svg":"murica.svg",
+  "/hex.svg":"hex.svg",
+  "/hex.png":"hex.png"
 }
 
 var adminPageMap = {
