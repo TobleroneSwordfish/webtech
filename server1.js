@@ -14,7 +14,7 @@ let auth = require('./auth.js');
 let templating = require('./templating.js');
 const WebSocket = require('ws');
 
-// formidable.syncParse = util.promisify(formidable.parse);
+var properties = read_yaml();
 
 var requestSessionHandler = sessions({
   cookieName: "session",
@@ -34,9 +34,8 @@ var wss;
 var notification_clients = [];
 
 //start the HTTP server
-start_server(8080);
+start_server(properties.http_port);
 //connect to the mySQL server using the credentials from the properties file
-var properties = read_yaml();
 connect_db(properties);
 //set up promisified version of the query method so we can await it
 const query = util.promisify(con.query).bind(con);
@@ -176,9 +175,9 @@ function read_yaml() {
 
 function connect_db(doc){
   con = mysql.createConnection({
-    host: doc.host,
-    user: doc.user,
-    password: doc.password
+    host: doc.db_host,
+    user: doc.db_user,
+    password: doc.db_password
   });
   con.connect(function(err) {
     if (err) throw err;
