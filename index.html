@@ -193,41 +193,6 @@ $if(loggedin){
     }
   }
 
-  function sort(tableid, sortid, iord){
-    // console.log(sortid)
-    var id = colnames[sortid];
-    var table, rows, switching, i, x, y, shouldSwitch;
-    table = document.getElementById(tableid);
-    switching = true;
-    while (switching) {
-      switching = false;
-      rows = table.rows;
-      for (i = 1; i < (rows.length - 2); i++) {
-        shouldSwitch = false;
-        // console.log(rows[i])
-        x = rows[i].childNodes[id]
-        y = rows[i+1].childNodes[id]
-        if (iord == "inc"){
-          if (parseInt(x.innerHTML.toLowerCase()) > parseInt(y.innerHTML.toLowerCase())) {
-          shouldSwitch = true;
-          break;
-          }
-        }
-        else {
-          if (parseInt(x.innerHTML.toLowerCase()) < parseInt(y.innerHTML.toLowerCase())) {
-          shouldSwitch = true;
-          break;
-         }
-        }
-        
-      }
-      if (shouldSwitch) {
-        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-        switching = true;
-      }
-    }
-  }
-
   function parse(str){
     str=str.split(" ").join("");
     // console.log(str);
