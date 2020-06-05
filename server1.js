@@ -361,7 +361,7 @@ async function handle_revive(payload) {
     var victimName = await query(getName, [Number(payload.other_id)]);
     var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
-    console.log(text);
+    // console.log(text);
     send_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
     query(forgive, [Number(payload.other_id), Number(payload.character_id)]);
@@ -436,7 +436,7 @@ function handle(request, response) {
   });
 
   var params = parse_parameters(request.url);
-  
+  // console.log(params)
   log("Method:", request.method);
   log("URL:", request.url);
   log("Params: ", params)
@@ -495,24 +495,16 @@ async function handle_get(request, response, params) {
       else {
         var count = 10;
       }
-      var iord;
-      if (params.iord){
-        // if (params.iord=="inc"){
-        //   console.log("Ascending")
-        //   iord="ASC"
-        // }
-        // else {
-          iord="DESC"
-      //   }
+      if (params.factions){
+        var factions=JSON.parse("[" + params.factions + "]");
       }
       else {
-        iord="DESC"
+        var factions=[1,2,3,4];
       }
+      var iord = "DESC";
       // console.log("fetching")
-      // var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY ? "+ iord +" LIMIT ?;";
-      // var result = await query(sql, [name, Number(count)]);
-      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY " + name + " " + iord + " LIMIT ?;";
-      var result = await query(sql, [Number(count)]);
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters WHERE faction_id in (" + factions + ") ORDER BY " + name + " "+ iord +" LIMIT " + count +";";
+      var result = await query(sql);
       // console.log("AAA")
       // console.log(result)
       var jsonObject = {};
