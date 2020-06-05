@@ -38,6 +38,24 @@ $if(loggedin){
   <option value="50">50</option>
   <option value="100">100</option>
 </select>
+<label class="checkbox-container">One
+  <input type="checkbox" checked="checked" id="faction1">
+  <span class="checkmark"></span>
+</label>
+<label class="checkbox-container">Two
+  <input type="checkbox" checked="checked" id="faction2">
+  <span class="checkmark"></span>
+</label>
+<label class="checkbox-container">Three
+  <input type="checkbox" checked="checked" id="faction3">
+  <span class="checkmark"></span>
+</label>
+<label class="checkbox-container">Four
+  <input type="checkbox" checked="checked" id="faction4">
+  <span class="checkmark"></span>
+</label>
+<button class="button" id="changeTable">Refresh</button>
+<br>
 <div id="info">
   <table id = playerstats><thead><tr>
   <th>Index</th>
@@ -143,19 +161,43 @@ $if(loggedin){
     times_revived: 4,
     faction_id: 5
   }
+
+  const factions = {
+    faction1: 1,
+    faction2: 2,
+    faction3: 3,
+    faction4: 4
+  }
+
   var selectedid="resurrections";
   var count=10;
+  var selectedFactions=[1,2,3,4]
+  document.getElementById("changeTable").addEventListener('click', function(){
+    updateFactions()
+    fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
+  })
+
+  function updateFactions(){
+    selectedFactions=[]
+    for (var f in factions){
+      if (document.getElementById(f).checked){
+        selectedFactions.push(factions[f])
+      }
+    }
+    console.log(selectedFactions)
+  }
   for (let id in colnames){
       console.log(id)
       document.getElementById(id).addEventListener('click', function(){
         selectedid=id;
-        fetch("/api/" + selectedid + "?count=" + count + "&iod=dec").then(handleTable);
+        fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
       })
     }
   var dropdown = document.getElementById("count");
   dropdown.addEventListener('change', function(){
     count=dropdown.options[dropdown.selectedIndex].value;
-    fetch("/api/" + selectedid + "?count=" + dropdown.options[dropdown.selectedIndex].value+ "&iod=dec").then(handleTable);
+    console.log(count)
+    // fetch("/api/" + selectedid + "?count=" + count +"&factions="+selectedFactions.toString()).then(handleTable);
   })
   fetch("/api/").then(handleTable);
   function handleTable(response) {
@@ -188,7 +230,6 @@ $if(loggedin){
   function resetTable(){
     var length = document.getElementById("playerstats").rows.length;
     for (var i=1; i<length; i++){
-      console.log(i)
       document.getElementById("playerstats").deleteRow(1);
     }
   }
