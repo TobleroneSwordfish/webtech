@@ -497,8 +497,8 @@ async function handle_get(request, response, params) {
       }
       var iord = "DESC";
       // console.log("fetching")
-      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived FROM characters ORDER BY ? "+ iord +" LIMIT ?;";
-      var result = await query(sql, [name, Number(count)]);
+      var sql = "SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters ORDER BY " + name + " "+ iord +" LIMIT " + count +";";
+      var result = await query(sql);
       // console.log("AAA")
       // console.log(result)
       var jsonObject = {};
