@@ -34,7 +34,7 @@ var wss;
 var notification_clients = [];
 
 //start the HTTP server
-start_server(properties.http_port);
+start_server(properties.http_port, properties.server_ip);
 //connect to the mySQL server using the credentials from the properties file
 connect_db(properties);
 //set up promisified version of the query method so we can await it
@@ -127,8 +127,8 @@ async function deleteArt(filename) {
   }
 }
 
-// Provide a service to localhost only.
-function start_server(port) {
+
+function start_server(port, ip) {
   // const options = {
   //   key: fs.readFileSync('key.pem'),
   //   cert: fs.readFileSync('cert.pem')
@@ -137,7 +137,7 @@ function start_server(port) {
   wss = new WebSocket.Server({server});
   wss.on("connection", wss_connection);
   // console.log(wss);
-  server.listen(port);
+  server.listen(port, ip);
 }
 
 function wss_connection(ws) {
