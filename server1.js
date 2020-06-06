@@ -58,7 +58,8 @@ var pageMap = {
   "/TRlogo.svg":"sword.svg",
   "/NClogo.svg":"murica.svg",
   "/hex.svg":"hex.svg",
-  "/hex.png":"hex.png"
+  "/hex.png":"hex.png",
+  "/tidy_32.gif":"tidy_32.gif"
 }
 
 var adminPageMap = {
@@ -129,15 +130,23 @@ async function deleteArt(filename) {
 
 
 function start_server(port, ip) {
-  // const options = {
-  //   key: fs.readFileSync('key.pem'),
-  //   cert: fs.readFileSync('cert.pem')
-  // };
-  let server = HTTP.createServer(handle);
+  const options = {
+    key: fs.readFileSync('key.pem'),
+    cert: fs.readFileSync('cert.pem')
+  };
+  var server;
+  if (properties.ssl_enabled) {
+    server = HTTPS.createServer(options, handle);
+    server.listen(properties.https_port, ip);
+  }
+  else {
+    server = HTTP.createServer(handle);
+    server.listen(properties.http_port, ip);
+  }
   wss = new WebSocket.Server({server});
   wss.on("connection", wss_connection);
   // console.log(wss);
-  server.listen(port, ip);
+  
 }
 
 function wss_connection(ws) {
