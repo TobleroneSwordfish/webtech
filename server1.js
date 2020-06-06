@@ -13,6 +13,7 @@ let sessions = require("client-sessions");
 let auth = require('./auth.js');
 let templating = require('./templating.js');
 const WebSocket = require('ws');
+const SecureWebSocket = require('wss');
 
 var properties = read_yaml();
 
@@ -138,13 +139,14 @@ function start_server(port, ip) {
   if (properties.ssl_enabled) {
     server = HTTPS.createServer(options, handle);
     server.listen(properties.https_port, ip);
+    wss = SecureWebSocket.createServerFrom(server, wss_connection);
   }
   else {
     server = HTTP.createServer(handle);
     server.listen(properties.http_port, ip);
+    wss = new WebSocket.Server({server});
+    wss.on("connection", wss_connection);
   }
-  wss = new WebSocket.Server({server});
-  wss.on("connection", wss_connection);
   // console.log(wss);
   
 }
