@@ -223,10 +223,8 @@ ul.navbar li a:hover {
     padding: 8px;
     border-collapse: collapse;
 }
-  
-#playerstats tr:nth-child(even){background-color: #b3aeae;}
  
-#playerstats tbody>tr:hover {background-color: rgba(233, 96, 226, 0.479);}
+#playerstats tbody>tr:hover {background-color: rgba(255, 255, 255, 0.575);}
 
 #playerstats thead {
     cursor: pointer;
@@ -244,9 +242,27 @@ ul.navbar li a:hover {
     color: white;
 }
 
-#faction1 {
-    background-color: rgb(25, 199, 63);
-    color: rgb(25, 199, 63);
+.vanu {
+    background-color: rgb(124, 0, 173);
+    color: rgb(255, 255, 255);
+    cursor: default;
+}
+
+.conglomerate {
+    background-color: rgb(0, 40, 173);
+    color: rgb(255, 255, 255);
+    cursor: default;
+}
+
+.terran {
+    background-color: rgb(173, 0, 0);
+    color: rgb(255, 255, 255);
+    cursor: default;
+}
+
+.ns {
+    background-color: rgb(114, 62, 32);
+    color: rgb(255, 255, 255);
     cursor: pointer;
 }
 
@@ -336,7 +352,7 @@ ul.navbar li a:hover {
 }
 
 .selected {
-    background-color: #9984a7;
+    background-color: #696969;
 }
 
 .faction-info {
@@ -354,26 +370,43 @@ ul.navbar li a:hover {
     position: absolute;
     bottom: 0px;
 }
+.logout-button{
+    width:30%;
+    height:30%;
+    left:35%;
+}
 
-.tooltip {
+/* Popup container - can be anything you want */
+.popup {
     position: relative;
     display: inline-block;
-    border-bottom: 1px dotted black; 
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
   }
   
-  
-  .tooltip .tooltiptext {
+.center {
+    text-align: center;
+}
+  /* The actual popup */
+  .popup .popuptext {
     visibility: hidden;
-    width: 120px;
-    background-color: black;
+    width: 160px;
+    background-color: #555;
     color: #fff;
     text-align: center;
-    padding: 5px 0;
     border-radius: 6px;
+    padding: 8px 0;
     position: absolute;
-    z-index: 1;
+    z-index: 2010;
+    bottom: -150%;
+    left: 50%;
+    margin-left: -80px;
   }
   
-  .tooltip:hover .tooltiptext {
+  /* Toggle this class - hide and show the popup */
+  .popup .show {
     visibility: visible;
   }

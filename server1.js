@@ -450,6 +450,7 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
+  console.log(request.url)
   log("params")
   log(params)
   log("get request with url: " + request.url)
@@ -521,11 +522,6 @@ async function handle_get(request, response, params) {
       reply(response, content, "text/plain");
     }
   }
-  else if (request.url.startsWith("/logout")) {
-    log("logging out")
-    request.session.reset();
-    redirect(response, "/");
-  }
   else if (request.url.startsWith("/fanart/approve")) {
     if (request.session.loggedin && request.session.admin) {
         approveArt(params.img);
@@ -543,6 +539,7 @@ async function handle_get(request, response, params) {
 
 async function handle_post(request, response, params) {
   var url = request.url;
+  console.log(request.url)
   if (url == "/fanart") {
     if (!request.session.loggedin) {
       return;
@@ -551,6 +548,11 @@ async function handle_post(request, response, params) {
     form.parse(request, parse_fanart);
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
+  }
+  else if (request.url.startsWith("/logout")) {
+    log("logging out")
+    request.session.reset();
+    redirect(response, "/");
   }
   else if (url == "/login") {
     // console.log("login post received");

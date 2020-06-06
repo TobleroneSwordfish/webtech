@@ -11,10 +11,24 @@
 <li><a href="/fanart">Fanart</a></li>
 <li>
 $if(loggedin){
-  <a href="/logout">Logged in as ${username}</a>
+  <form action="/logout" method="post" class="center">
+    <input type="submit" value="Logout" class="logout-button"></input>
+  </form>
 }else{
-  <a href="/login">Login</a>
+<a class="popup" id="loginPopup">Login
+  <span class="popuptext" id="loginPopupText">
+    <form action="/login" method="post" class="center">
+      Username: <br>
+      <input type="text" name="username"> <br>
+      Password: <br>
+      <input type="password" name="password"> <br>
+      <input type="submit">
+    </form>
+  </span>
+</a>
 }
+
+
 </li>
 </ul>
 <div class="dark">
@@ -40,20 +54,20 @@ $if(loggedin){
   <option value="50">50</option>
   <option value="100">100</option>
 </select>
-<label class="checkbox-container">One
-  <input type="checkbox" checked="checked" id="faction1">
+<label class="checkbox-container">Vanu Sovereignty
+  <input type="checkbox" checked="checked" id="vanu">
   <span class="checkmark"></span>
 </label>
-<label class="checkbox-container">Two
-  <input type="checkbox" checked="checked" id="faction2">
+<label class="checkbox-container">New Conglomerate
+  <input type="checkbox" checked="checked" id="conglomerate">
   <span class="checkmark"></span>
 </label>
-<label class="checkbox-container">Three
-  <input type="checkbox" checked="checked" id="faction3">
+<label class="checkbox-container">Terran Republic
+  <input type="checkbox" checked="checked" id="terran">
   <span class="checkmark"></span>
 </label>
-<label class="checkbox-container">Four
-  <input type="checkbox" checked="checked" id="faction4">
+<label class="checkbox-container">NS Operatives
+  <input type="checkbox" checked="checked" id="ns">
   <span class="checkmark"></span>
 </label>
 <button class="button" id="changeTable">Refresh</button>
@@ -154,7 +168,19 @@ $if(loggedin){
       this.classList.add(expandedTag);
     }
   }
-  
+
+  $if(!loggedin){
+    document.getElementById("loginPopup").addEventListener("click",togglePopup);
+    function togglePopup() {
+      var popup = document.getElementById("loginPopupText");
+      console.log("Aaaaaaaa")
+      popup.classList.toggle("show");
+    }
+    document.getElementById("loginPopupText").addEventListener("click",togglePopup,false);
+    function stopPropagation(ev) {
+      ev.stopPropagation();
+    }
+  }
   const colnames = {
     username: 0,
     resurrections: 1,
@@ -165,10 +191,10 @@ $if(loggedin){
   }
 
   const factions = {
-    faction1: 1,
-    faction2: 2,
-    faction3: 3,
-    faction4: 4
+    1:"vanu",
+    2:"conglomerate",
+    3:"terran",
+    4:"ns"
   }
 
   var selectedid="resurrections";
@@ -182,8 +208,9 @@ $if(loggedin){
   function updateFactions(){
     selectedFactions=[]
     for (var f in factions){
-      if (document.getElementById(f).checked){
-        selectedFactions.push(factions[f])
+      console.log(f)
+      if (document.getElementById(factions[f]).checked){
+        selectedFactions.push(f)
       }
     }
     console.log(selectedFactions)
@@ -216,8 +243,10 @@ $if(loggedin){
     table.appendChild(document.createElement('tbody'));
     var table = document.getElementById("playerstats").getElementsByTagName("tbody")[0];
     for (var u in obj){
-      console.log(u)
+      // console.log(u)
       var row = table.insertRow(-1);
+      console.log(obj[u]["faction_id"])
+      row.classList.add(factions[obj[u]["faction_id"]])
       var cell = row.insertCell(-1);
       cell.innerHTML = parseInt(u)+1;
       for (var p in colnames){
