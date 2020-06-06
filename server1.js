@@ -18,7 +18,7 @@ var properties = read_yaml();
 
 var requestSessionHandler = sessions({
   cookieName: "session",
-  secret: "there are no wolves on fenris",
+  secret: properties.cookie_secret || "there are no wolves on fenris",
   duration: 24 * 60 * 60 * 1000,
   activeDuration: 1000 * 60 * 5
 });
@@ -450,7 +450,6 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
-  console.log(request.url)
   log("params")
   log(params)
   log("get request with url: " + request.url)
