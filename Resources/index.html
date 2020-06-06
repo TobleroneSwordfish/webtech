@@ -273,7 +273,7 @@ $if(loggedin){
 </script>
 <script>
   "use strict"
-  let notification_socket = new WebSocket("ws://" + window.location.hostname + ":8080/notifications");
+  let notification_socket = new WebSocket("ws://" + window.location.hostname + ":" + window.location.port + "/notifications");
   notification_socket.onmessage = handle_notifications;
   // notification_socket.onopen = open_notification_socket();
   function handle_notifications(response){
