@@ -479,9 +479,9 @@ async function handle_get(request, response, params) {
       send_file(file, response, type);
     }
   }
-  else if (request.url.startsWith("/notifications")) {
-    reply(response, JSON.stringify(notifications), "text/json");
-  }
+  // else if (request.url.startsWith("/notifications")) {
+  //   reply(response, JSON.stringify(notifications), "text/json");
+  // }
   else if (request.url.startsWith("/api/")) {
     var name = request.url.substring(5).split("?")[0];
     if (name==""){
