@@ -132,8 +132,8 @@ async function deleteArt(filename) {
 
 function start_server(port, ip) {
   const options = {
-    key: fs.readFileSync('key.pem'),
-    cert: fs.readFileSync('cert.pem')
+    key: fs.readFileSync(properties.ssl_key_path),
+    cert: fs.readFileSync(properties.ssl_cert_path)
   };
   var server;
   if (properties.ssl_enabled) {
