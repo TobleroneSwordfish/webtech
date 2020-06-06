@@ -621,7 +621,7 @@ async function getFanartNames(approved) {
 
 //template and send an HTML page
 async function send_page(filePath, request, response) {
-  var content = await fs.readFileSync("./" + filePath, "utf8");
+  var content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   var templateMap = {};
   //here we add stuff to the template map to be sent to the client
   templateMap.loggedin = request.session.loggedin;
@@ -648,10 +648,10 @@ async function send_page(filePath, request, response) {
 async function send_file(filePath, response, mimeType) {
   var content
   if (mimeType.includes("text")) {
-    content = await fs.readFileSync("./" + filePath, "utf8");
+    content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   }
   else {
-    content = await fs.readFileSync("./" + filePath);
+    content = await fs.readFileSync("./Resources/" + filePath);
   }
   reply(response, content, mimeType);
 }
