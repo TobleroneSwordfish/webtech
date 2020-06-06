@@ -6,7 +6,6 @@ function template(content, templateMap) {
         //basic substitution
         i++;
         if (content[i] == '{') {
-        
             var end = content.indexOf("}", i);
             if (end != -1) {
                 var key = content.substring(i + 1, end);
@@ -71,6 +70,11 @@ function template(content, templateMap) {
             // if (templateMap[boolName] == undefined) {
             //     console.log("Missing boolean to satisfy if at " + i);
             // }
+            var invert=false;
+            if (boolName.startsWith("!")){
+                invert=true;
+                boolName=boolName.substring(1)
+            }
             var bodyEnd = find_end(content, "{}", bracketEnd + 1);
             var body = content.substring(bracketEnd + 2, bodyEnd - 1);
             //there is an else case
@@ -81,11 +85,11 @@ function template(content, templateMap) {
                 var elseEnd = find_end(content, "{}", elseStart);
                 var elseBody = content.substring(elseStart + 1, elseEnd - 1);
                 bodyEnd = elseEnd;
-                if (!templateMap[boolName]) {
+                if (!(templateMap[boolName]^invert)) {
                     content = content.substring(0, i - 1) + template(elseBody, templateMap) + content.substring(bodyEnd + 1);
                 }
             }
-            if (templateMap[boolName]) {
+            if (templateMap[boolName]^invert) {
                 content = content.substring(0, i - 1) + template(body, templateMap) + content.substring(bodyEnd + 1);
             }
             else if (!elseCase) {
