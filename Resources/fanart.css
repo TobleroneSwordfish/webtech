@@ -9,3 +9,17 @@ img{
     background-color: #666699;
     color:white;
 }
+
+.comment {
+    margin-left: 4%;
+    background-color: #8b8bb4;
+}
+.comment .content {
+    display: inline-block;
+    background-color: #666699;
+    margin-left:4%;
+}
+
+.id {
+    display: none;
+}

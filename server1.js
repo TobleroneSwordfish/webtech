@@ -123,7 +123,7 @@ async function deleteArt(filename) {
   var resp = await query(q, [filename]);
   if (resp.length > 0) {
     try {
-      await fs.unlinkSync(__dirname + "/Fanart/" + resp[0].filename);
+      await fs.unlinkSync(__dirname + "/Resources/Fanart/" + resp[0].filename);
     } catch (error) {
       console.log("Unable to delete art: " + error);
     }
@@ -256,6 +256,8 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
+  var id = await post_comment(1, "hai");
+  post_comment(1, "oh hello there", id);
 }
 
 //subscribe to census API events
@@ -620,10 +622,37 @@ function parse_parameters(url){
   return dict;
 }
 
-async function getFanartNames(approved) {
-  var q = "SELECT filename FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
+async function getFanart(approved) {
+  var q = "SELECT id, filename FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
   var result = await query(q);
-  return result.map((element) => element.filename); //convert the SQL results into a simple array
+  return result; //convert the SQL results into a simple array
+}
+
+async function getCommentChildren(comment) {
+  var q = "SELECT * FROM comments WHERE parent_id = ?;";
+  var children = await query(q, [comment.id]);
+  if (children.length > 0) {
+    for (let child of children) {
+      child.children = await getCommentChildren(child);
+    }
+    return children;
+  }
+  return [];
+}
+
+async function post_comment(fanart_id, content, parent_id) {
+  //cause apparently mysql can't understand nulls even though it should
+  if (parent_id != undefined) {
+    var q = "INSERT INTO comments (fanart_id, content, parent_id) VALUES (?,?,?);"
+    await query(q, [fanart_id, content, parent_id]);
+  }
+  else {
+    var q = "INSERT INTO comments (fanart_id, content) VALUES (?,?);"
+    await query(q, [fanart_id, content]);
+  }
+  var q = "SELECT LAST_INSERT_ID();"
+  var result = await query(q);
+  return result[0]["LAST_INSERT_ID()"];
 }
 
 //template and send an HTML page
@@ -640,10 +669,19 @@ async function send_page(filePath, request, response) {
     templateMap["time"] = time;
   }
   else if (filePath == "fanart.html") {
-    templateMap["images"] = await getFanartNames(true);
+    var images = await getFanart(true);
+    for (let img of images) {
+      var q = "SELECT * FROM comments WHERE fanart_id = ? AND parent_id IS NULL;";
+      var topLevels = await query(q, [img.id]);
+      for (let comment of topLevels) {
+        comment.children = await getCommentChildren(comment);
+      }
+      img.comments = topLevels;
+    }
+    templateMap.images = images;
   }
   else if (filePath == "approve.html") {
-    templateMap["images"] = await getFanartNames(false);
+    templateMap["images"] = await getFanart(false);
   }
   content = templating.template(content, templateMap);
   // console.log("Content: " + content);

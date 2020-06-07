@@ -1,3 +1,14 @@
+$declare(comment_block){
+  <div class="comment">
+    <div class="id">${comment.id}</div>
+    <div class="content">
+      ${comment.content}
+    </div>
+    $foreach(comment in comment.children){
+      ${comment_block}
+    }
+  </div>
+}
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
   lang="en-GB" xml:lang="en-GB">
@@ -28,9 +39,13 @@ $if(loggedin){
 }
 $foreach(img in images){
 <div>
-    <img src="/fanart/${img}"/>
+    <div class="id">${img.id}</div>
+    <img src="/fanart/${img.filename}"/>
     $if(loggedin){
-    <a class="approval-button" href="/fanart/delet?img=${img}">Delete this piece</a>
+    <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
+    }
+    $foreach(comment in img.comments){
+      ${comment_block}
     }
 </div>
 }
