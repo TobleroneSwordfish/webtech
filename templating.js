@@ -1,3 +1,5 @@
+const vm = require("vm"); //ho boy
+
 //takes the page content string and a map of variable names to values
 //returns the same content with the names changed to values
 function template(content, templateMap) {
@@ -9,8 +11,9 @@ function template(content, templateMap) {
             var end = content.indexOf("}", i);
             if (end != -1) {
                 var key = content.substring(i + 1, end);
-                if (templateMap[key]) {
-                    content = content.split("${" + key + "}").join(template(templateMap[key], templateMap));
+                var value = evaluate(key, templateMap);
+                if (value) {
+                    content = content.split("${" + key + "}").join(template(value, templateMap));
                 }
                 else {
                     console.log("Missing object in template map: " + key);
@@ -33,7 +36,8 @@ function template(content, templateMap) {
             var inside = content.substring(i + "foreach(".length, bracketEnd).split(" in ");
             var keyName = inside[0];
             //console.log("key name = " + keyName);
-            var array = templateMap[inside[1]];
+            // var array = templateMap[inside[1]];
+            var array = evaluate(inside[1], templateMap);
             if (array == undefined) {
                 console.log("Missing iterable for foreach templating");
                 break;
@@ -70,13 +74,14 @@ function template(content, templateMap) {
             // if (templateMap[boolName] == undefined) {
             //     console.log("Missing boolean to satisfy if at " + i);
             // }
-            var invert=false;
-            if (boolName.startsWith("!")){
-                invert=true;
-                boolName=boolName.substring(1)
-            }
+            // var invert=false;
+            // if (boolName.startsWith("!")){
+            //     invert=true;
+            //     boolName=boolName.substring(1)
+            // }
             var bodyEnd = find_end(content, "{}", bracketEnd + 1);
             var body = content.substring(bracketEnd + 2, bodyEnd - 1);
+            var value = evaluate(boolName, templateMap);
             //there is an else case
             var elseCase = false;
             if (content.substring(bodyEnd).startsWith("else")) {
@@ -85,11 +90,11 @@ function template(content, templateMap) {
                 var elseEnd = find_end(content, "{}", elseStart);
                 var elseBody = content.substring(elseStart + 1, elseEnd - 1);
                 bodyEnd = elseEnd;
-                if (!(templateMap[boolName]^invert)) {
+                if (!value) {
                     content = content.substring(0, i - 1) + template(elseBody, templateMap) + content.substring(bodyEnd + 1);
                 }
             }
-            if (templateMap[boolName]^invert) {
+            if (value) {
                 content = content.substring(0, i - 1) + template(body, templateMap) + content.substring(bodyEnd + 1);
             }
             else if (!elseCase) {
@@ -128,6 +133,8 @@ function find_end(content, symbolPair, i) {
     return i;
 }
 
-function simple_template() {
-
+function evaluate(code, templateMap) {
+    var context = new vm.createContext(templateMap);
+    var script = new vm.Script(code);
+    return script.runInContext(context);
 }

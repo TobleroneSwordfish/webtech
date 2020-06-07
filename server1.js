@@ -28,7 +28,10 @@ var requestSessionHandler = sessions({
 var con;
 
 //daybreak API ID
-var serviceID = "s:jtwebtech"
+var serviceID = properties.census_id;
+if (!serviceID) {
+  console.log("Missing service id, please set \"census_id\" in the properties file");
+}
 
 //websocket server to send notifications to clients
 var wss;
@@ -76,7 +79,7 @@ async function loadImages() {
   for (var i = 0; i < response.length; i++) {
     loadArt(response[i].filename, response[i].approved);
   }
-  var files = await fs.readdirSync("./Fanart");
+  var files = await fs.readdirSync("./Resources/Fanart");
   files.forEach(function(value, index, array) {
     if (!response.some((element) => element.filename == value)) {
       loadArt(value);
@@ -157,6 +160,7 @@ function wss_connection(ws) {
 }
 
 function client_close(ws) {
+  console.log("Websocket closed");
   notification_clients = notification_clients.splice(notification_clients.indexOf(ws), 1);
 }
 
@@ -252,8 +256,6 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
-  // var auth_resp = await auth.authenticateUser("foo", "hunter2");
-  // console.log(auth_resp);
 }
 
 //subscribe to census API events
@@ -267,14 +269,12 @@ function subscribe_events(socket) {
   var expTypes = [7, 53, 4, 5, 51];
   var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
   var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
-  // console.log(eventNames);
   socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
 //handle an event sent by the API
 async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
-  //console.log(jsonData);
   //ignore heartbeat messages
   if (jsonData.type == "heartbeat") {
     return
@@ -355,7 +355,6 @@ async function handle_death(payload) {
 }
 
 async function handle_revive(payload) {
-  // console.log("revive received");
   await create_if_new(payload.character_id);
   await create_if_new(payload.other_id);
   //actually increase the resurrections count
@@ -372,7 +371,6 @@ async function handle_revive(payload) {
     var victimName = await query(getName, [Number(payload.other_id)]);
     var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
-    // console.log(text);
     send_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
     query(forgive, [Number(payload.other_id), Number(payload.character_id)]);
@@ -396,7 +394,6 @@ async function get_character_data(id, ...properties) {
     params += properties.join("&c:show=");
   }
   var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
-  //console.log(requestString)
   var result = await try_fetch(requestString);
   if (result.status != 200) {
     console.log("API returned invalid response code " + result.status);
