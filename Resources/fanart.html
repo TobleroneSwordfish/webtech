@@ -24,14 +24,14 @@ $declare(comment_block){
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
   <li><a href="/login">
-  $if(loggedin){
+  $if(session.loggedin){
     Logged in as ${username}
   }else{
     Login
   }
   </a></li>
 </ul>
-$if(loggedin){
+$if(session.loggedin){
 <form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
     <input type="submit">
@@ -41,7 +41,7 @@ $foreach(img in images){
 <div>
     <div class="id">${img.id}</div>
     <img src="/fanart/${img.filename}"/>
-    $if(loggedin){
+    $if(session.loggedin){
     <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
     }
     $foreach(comment in img.comments){

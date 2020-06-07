@@ -676,12 +676,8 @@ async function post_comment(fanart_id, content, parent_id) {
 async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   var templateMap = {};
-  templateMap.session=request.session;
   //here we add stuff to the template map to be sent to the client
-  templateMap.loggedin = request.session.loggedin;
-  if (templateMap.loggedin) {
-    templateMap.username = request.session.username;
-  }
+  templateMap.session=request.session;
   if (filePath == "index.html") {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;

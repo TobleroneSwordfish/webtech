@@ -11,8 +11,8 @@
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
 <li>
-$if(loggedin){
-  <a href="/logout">Logged in as ${username}</a>
+$if(session.loggedin){
+  <a href="/logout">Logged in as ${session.username}</a>
 }else{
   <a href="/login">Login</a>
 }
