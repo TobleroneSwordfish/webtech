@@ -34,3 +34,7 @@ img{
 .id {
     display: none;
 }
+
+form#form-prototype.comment-form {
+    display: none;
+}

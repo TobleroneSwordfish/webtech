@@ -7,7 +7,7 @@ $declare(comment_block){
       <br>
       ${comment.content}
       <br>
-      <button class="reply-button">Reply</button>
+      <button class="reply-button hidden">Reply</button>
     </div>
     $foreach(comment in comment.children){
       ${comment_block}
@@ -64,10 +64,12 @@ $foreach(img in images){
 </div>
 
 <script>
+  "use strict"
   var replyButtons = document.getElementsByClassName("reply-button");
   for (var i = 0; i < replyButtons.length; i++) {
     replyButtons[i].addEventListener("click", openReplyForm);
   }
+
   function openReplyForm() {
     const form = document.getElementById("form-prototype");
     var clone = form.cloneNode(true);
@@ -80,9 +82,26 @@ $foreach(img in images){
     this.parentElement.appendChild(clone);
     this.classList.toggle("hidden");
   }
+
   function closeReplyForm() {
     this.parentElement.parentElement.getElementsByClassName("reply-button")[0].classList.toggle("hidden");
     this.parentElement.remove();
+  }
+</script>
+
+<script>
+  "use strict"
+  var comments = document.querySelectorAll(".comment .content");
+  for (var i = 0; i < comments.length; i++) {
+    comments[i].addEventListener("mouseover", revealReply);
+    comments[i].addEventListener("mouseleave", hideReply);
+  }
+  function revealReply() {
+    console.log("test")
+    this.parentElement.querySelector(".reply-button").classList.remove("hidden");
+  }
+  function hideReply() {
+    this.parentElement.querySelector(".reply-button").classList.add("hidden");
   }
 </script>
 
