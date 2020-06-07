@@ -156,7 +156,7 @@ img{
     height:80%;
 }
 
-ul.navbar {
+ul.user-navbar {
     background-color: #666699;
     z-index: 2001;
     list-style-type: none;
@@ -168,13 +168,13 @@ ul.navbar {
     left:0;
     width:100%;
 }
-ul.navbar li {
+ul.user-navbar li {
     margin: 0;
     padding: 0;
     width: 33.333333%;
     float: left;
 } 
-ul.navbar li a {
+ul.user-navbar li a {
     padding: 14px 16px;
     text-align: center;
     display:block;
@@ -184,7 +184,7 @@ ul.navbar li a {
     font-family: Arial, Helvetica, sans-serif;
     text-decoration: none;
 }
-ul.navbar li a:hover {
+ul.user-navbar li a:hover {
     background-color: darkseagreen;
 }
 
@@ -242,29 +242,55 @@ ul.navbar li a:hover {
     color: white;
 }
 
-.vanu {
+.Vanu {
     background-color: rgb(124, 0, 173);
     color: rgb(255, 255, 255);
     cursor: default;
 }
 
-.conglomerate {
+.Conglomerate {
     background-color: rgb(0, 40, 173);
     color: rgb(255, 255, 255);
     cursor: default;
 }
 
-.terran {
+.Terran {
     background-color: rgb(173, 0, 0);
     color: rgb(255, 255, 255);
     cursor: default;
 }
 
-.ns {
+.NS {
     background-color: rgb(114, 62, 32);
     color: rgb(255, 255, 255);
     cursor: pointer;
 }
+
+
+.block {
+    display: block;
+}
+
+.search-container {
+    width: 15%;
+    /* float:right; */
+    /* text-align: right; */
+}
+
+.search-container button {
+    float: right;
+    padding: 6px 10px;
+    margin-top: 8px;
+    margin-right: 16px;
+    background: #ddd;
+    font-size: 17px;
+    border: none;
+    cursor: pointer;
+  }
+  
+.search-container button:hover {
+    background: #ccc;
+  }
 
 .logo {
     /* transform: scale(0.5); */
@@ -370,17 +396,36 @@ ul.navbar li a:hover {
     position: absolute;
     bottom: 0px;
 }
+.nav-button{
+    width: 100%;
+    cursor: pointer;
+    text-align: center;
+    display:block;
+    background-color: #666699;
+}
+.nav-button:hover {
+    background-color: darkseagreen;
+}
 .logout-button{
-    width:30%;
-    height:30%;
-    left:35%;
+    width: 50%;
+    cursor: pointer;
+    background: transparent;
+    border: none !important;
+    padding: 14px 16px;
+    text-align: center;
+    display:inline-block;
+    background-color:transparent;
+    color:white;
+    font-size: large;
+    font-family: Arial, Helvetica, sans-serif;
+    text-decoration: none;
 }
 
 /* Popup container - can be anything you want */
 .popup {
     position: relative;
     display: inline-block;
-    cursor: pointer;
+    cursor: default;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
@@ -398,10 +443,10 @@ ul.navbar li a:hover {
     color: #fff;
     text-align: center;
     border-radius: 6px;
-    padding: 8px 0;
+    padding: 20px;
     position: absolute;
     z-index: 2010;
-    bottom: -150%;
+    bottom: -310%;
     left: 50%;
     margin-left: -80px;
   }

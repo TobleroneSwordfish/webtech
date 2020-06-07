@@ -6,29 +6,28 @@
 <title>Planetside 2 stats</title>
 </head>
 <body>
-<ul class="navbar horizontal">
+if()
+<ul class="user-navbar horizontal">
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
 <li>
 $if(loggedin){
-  <form action="/logout" method="post" class="center">
+  <form action="/logout" method="post" class="center nav-button"> Logged in as ${username}
     <input type="submit" value="Logout" class="logout-button"></input>
   </form>
 }else{
 <a class="popup" id="loginPopup">Login
-  <span class="popuptext" id="loginPopupText">
+  <div class="popuptext" id="loginPopupText">
     <form action="/login" method="post" class="center">
       Username: <br>
       <input type="text" name="username"> <br>
       Password: <br>
       <input type="password" name="password"> <br>
-      <input type="submit">
+      <input type="submit" class= "button">
     </form>
-  </span>
+  </div>
 </a>
 }
-
-
 </li>
 </ul>
 <div class="dark">
@@ -44,6 +43,7 @@ $if(loggedin){
   <div class = "box-title">NOTIFICATIONS</div>
   <div class = "box-content" id="notifications"></div>
 </div>
+<div class="center">
 <select id="count" name="# of players">
   <option value="10" selected>10</option>
   <option value="20">20</option>
@@ -51,23 +51,25 @@ $if(loggedin){
   <option value="100">100</option>
 </select>
 <label class="checkbox-container">Vanu Sovereignty
-  <input type="checkbox" checked="checked" id="vanu">
+  <input type="checkbox" checked="checked" id="Vanu">
   <span class="checkmark"></span>
 </label>
 <label class="checkbox-container">New Conglomerate
-  <input type="checkbox" checked="checked" id="conglomerate">
+  <input type="checkbox" checked="checked" id="Conglomerate">
   <span class="checkmark"></span>
 </label>
 <label class="checkbox-container">Terran Republic
-  <input type="checkbox" checked="checked" id="terran">
+  <input type="checkbox" checked="checked" id="Terran">
   <span class="checkmark"></span>
 </label>
 <label class="checkbox-container">NS Operatives
-  <input type="checkbox" checked="checked" id="ns">
+  <input type="checkbox" checked="checked" id="NS">
   <span class="checkmark"></span>
 </label>
 <button class="button" id="changeTable">Refresh</button>
-<br>
+<input type="text" placeholder="Player name" name="search" id="search">
+<button class="button" id="searchRequest">Search for player</button>
+</div>
 <div id="info">
   <table id = playerstats><thead><tr>
   <th>Index</th>
@@ -76,7 +78,7 @@ $if(loggedin){
   <th id = suicides> # of suicides </th>
   <th id = teamkills> # of teamkills </th>
   <th id = times_revived> # of times_revived </th> 
-  <th id = faction_id> Faction ID </th> 
+  <th id = faction_id> Faction </th> 
 </tr></thead></table>
 </div>
 </div>
@@ -166,17 +168,43 @@ $if(loggedin){
   }
 
   $if(!loggedin){
+    document.body.addEventListener("click",toggleOffPopup,false);
+
+    function toggleOffPopup() {
+      var popup=document.getElementById('loginPopupText');
+        if (popup.classList.contains("show")){
+          popup.classList.toggle("show");
+        }
+    }
+
     document.getElementById("loginPopup").addEventListener("click",togglePopup);
     function togglePopup() {
       var popup = document.getElementById("loginPopupText");
-      console.log("Aaaaaaaa")
       popup.classList.toggle("show");
     }
-    document.getElementById("loginPopupText").addEventListener("click",togglePopup,false);
+    document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
     function stopPropagation(ev) {
+      console.log("called stoppropagation")
       ev.stopPropagation();
     }
   }
+
+  document.getElementById("searchRequest").addEventListener("click", searchForPlayer);
+
+  function searchForPlayer(){
+    search=true;
+    fetch("/search/"+document.getElementById("search").value).then(handleTable)
+  }
+  
+  document.getElementById("search").addEventListener("keyup", clickSearchButton)
+
+  function clickSearchButton(event){
+    if (event.keyCode === 13) {
+    event.preventDefault();
+    document.getElementById("searchRequest").click();
+    }
+  }
+
   const colnames = {
     username: 0,
     resurrections: 1,
@@ -187,15 +215,16 @@ $if(loggedin){
   }
 
   const factions = {
-    1:"vanu",
-    2:"conglomerate",
-    3:"terran",
-    4:"ns"
+    1:"Vanu",
+    2:"Conglomerate",
+    3:"Terran",
+    4:"NS"
   }
 
   var selectedid="resurrections";
   var count=10;
-  var selectedFactions=[1,2,3,4]
+  var selectedFactions=[1,2,3,4];
+  var search=false;
   document.getElementById("changeTable").addEventListener('click', function(){
     updateFactions()
     fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
@@ -230,6 +259,7 @@ $if(loggedin){
     response.text().then(fillTable)
   }
   function fillTable(data) {
+    console.log("filltable called")
     resetTable();
     console.log(data)
     document.getElementById(selectedid).classList.add("selected");
@@ -251,7 +281,19 @@ $if(loggedin){
         if (p==selectedid){
           cell.classList.add("selected");
         }
+        if (p=="faction_id"){
+          console.log("p ")
+          cell.innerHTML = factions[obj[u][p]];
+        }
       }
+    }
+    if (search){
+      var hidden = Array.prototype.slice.call(document.querySelectorAll(".selected"));
+        
+        // Now we can loop using the Array API
+        hidden.forEach(function(item){
+            item.classList.remove("selected");
+        });
     }
   }
   function resetTable(){

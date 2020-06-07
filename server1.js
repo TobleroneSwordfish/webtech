@@ -134,12 +134,12 @@ async function deleteArt(filename) {
 
 
 function start_server(port, ip) {
-  const options = {
-    key: fs.readFileSync(properties.ssl_key_path),
-    cert: fs.readFileSync(properties.ssl_cert_path)
-  };
   var server;
   if (properties.ssl_enabled) {
+    const options = {
+      key: fs.readFileSync(properties.ssl_key_path),
+      cert: fs.readFileSync(properties.ssl_cert_path)
+    };
     server = HTTPS.createServer(options, handle);
     server.listen(properties.https_port, ip);
     wss = SecureWebSocket.createServerFrom(server, wss_connection);
@@ -543,6 +543,23 @@ async function handle_get(request, response, params) {
       reload(request, response);
     }
   }
+  else if (request.url.startsWith("/search")){
+    var username=request.url.substring(8);
+    var sql = 'SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters WHERE username="' + username + '" LIMIT 1;';
+    var result = await query(sql);
+    var jsonObject = {};
+    result.forEach(function (value, index, array) {
+      var obj = {};
+      for (var col in columns) {
+        obj[columns[col]] = value[columns[col]];
+      }
+      jsonObject[index] = obj;
+    });
+    //console.log(jsonObject);
+    var content = JSON.stringify(jsonObject);
+    //console.log(content)
+    reply(response, content, "text/plain");
+  }
   log("");
 }
 
@@ -659,6 +676,7 @@ async function post_comment(fanart_id, content, parent_id) {
 async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   var templateMap = {};
+  templateMap.session=request.session;
   //here we add stuff to the template map to be sent to the client
   templateMap.loggedin = request.session.loggedin;
   if (templateMap.loggedin) {
