@@ -53,7 +53,7 @@ var pageMap = {
   "/":"index.html",
   "/favicon.ico":"favicon.ico", //we have to serve this locally because deybreak's cdn is weird
   "/fanart":"fanart.html",
-  "/login":"login.html",
+  // "/login":"login.html",
   "/test":"test.txt",
   "/style.css":"style.css",
   "/fanart.css":"fanart.css",
@@ -100,12 +100,15 @@ function loadArt(filename, isapproved) {
     adminPageMap["/fanart/unapproved/" + filename] = filePath;
   }
 }
-async function storeArt(filename, isapproved) {
+async function storeArt(filename, isapproved, user_id) {
   if (isapproved == undefined) {
     isapproved = false;
   }
-  var q = "INSERT IGNORE INTO fanart (filename, approved) VALUES (?, ?);";
-  await query(q, [filename, isapproved]);
+  if (user_id == undefined) {
+    user_id = 1;
+  }
+  var q = "INSERT IGNORE INTO fanart (filename, approved, user_id) VALUES (?, ?, ?);";
+  await query(q, [filename, isapproved, user_id]);
 }
 function approveArt(filename, approve) {
   if (approve == undefined) {
@@ -119,7 +122,7 @@ function unapproveArt(filename) {
   approveArt(filename, false);
 }
 async function deleteArt(filename) {
-  var q = "SELECT filename FROM fanart WHERE filename = ?;";
+  var q = "SELECT id FROM fanart WHERE filename = ?;";
   var resp = await query(q, [filename]);
   if (resp.length > 0) {
     try {
@@ -127,8 +130,10 @@ async function deleteArt(filename) {
     } catch (error) {
       console.log("Unable to delete art: " + error);
     }
-    var q = "DELETE FROM fanart WHERE filename = ?;";
-    query(q, [resp[0].filename]);
+    var q = "DELETE FROM comments WHERE fanart_id = ?;";
+    await query(q, [resp[0].id]);
+    q = "DELETE FROM fanart WHERE filename = ?;";
+    await query(q, [filename]);
   }
 }
 
@@ -539,7 +544,7 @@ async function handle_get(request, response, params) {
   }
   else if (request.url.startsWith("/fanart/delet")) {
     if (request.session.loggedin && request.session.admin) {
-      deleteArt(params.img);
+      await deleteArt(params.img);
       reload(request, response);
     }
   }
@@ -571,7 +576,7 @@ async function handle_post(request, response, params) {
       return;
     }
     var form = new formidable.IncomingForm();
-    form.parse(request, parse_fanart);
+    form.parse(request, (err, fields, files) => parse_fanart(err, fields, files, request));
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
   }
@@ -580,7 +585,13 @@ async function handle_post(request, response, params) {
     var userId = await get_user_id(request.session.username);
     form.parse(request, (err, fields, files) => {
       if (err) throw err;
-      post_comment(Number(fields.fanart_id), userId, fields.content, Number(fields.parent_id));
+      if (fields.parent_id == "undefined") {
+        fields.parent_id = undefined;
+      }
+      else {
+        fields.parent_id = Number(fields.parent_id);
+      }
+      post_comment(Number(fields.fanart_id), userId, fields.content, fields.parent_id);
     })
     reload(request, response);
   }
@@ -614,12 +625,12 @@ async function handle_post(request, response, params) {
   }
 }
 
-async function parse_fanart(err, fields, files) {
+async function parse_fanart(err, fields, files, request) {
   if (err) throw err;
   log("Files uploaded " + JSON.stringify(files));
-  await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+  await fs.rename(files.filename.path, __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
   loadArt(files.filename.name);
-  storeArt(files.filename.name)
+  storeArt(files.filename.name, false, await get_user_id(request.session.username));
 }
 
 async function get_user_id(username) {
@@ -659,7 +670,7 @@ function parse_parameters(url){
 }
 
 async function getFanart(approved) {
-  var q = "SELECT id, filename FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
+  var q = "SELECT id, filename, user_id FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
   var result = await query(q);
   return result; //convert the SQL results into a simple array
 }

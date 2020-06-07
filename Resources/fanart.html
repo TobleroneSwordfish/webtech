@@ -29,14 +29,26 @@ $declare(comment_block){
 <ul class="user-navbar horizontal">
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
-  <li><a href="/login">
+  <li>
   $if(session.loggedin){
-    Logged in as ${session.username}
+    <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
+      <input type="submit" value="Logout" class="logout-button"></input>
+    </form>
   }else{
-    Login
+  <a class="popup" id="loginPopup">Login
+    <div class="popuptext" id="loginPopupText">
+      <form action="/login" method="post" class="center">
+        Username: <br>
+        <input type="text" name="username"> <br>
+        Password: <br>
+        <input type="password" name="password"> <br>
+        <input type="submit" class= "button">
+      </form>
+    </div>
+  </a>
   }
-  </a></li>
-</ul>
+  </li>
+  </ul>
 <div class="dark">
 <div class = "top">
 
@@ -49,8 +61,9 @@ $if(session.loggedin){
 $foreach(img in images){
 <div>
     <div class="id">${img.id}</div>
+    Uploaded by: ${users[img.user_id]}
     <img src="/fanart/${img.filename}"/>
-    $if(session.loggedin){
+    $if(session.loggedin && session.admin){
     <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
     }
     $foreach(comment in img.comments){
@@ -58,6 +71,8 @@ $foreach(img in images){
         ${comment_block}
       </div>
     }
+    <br>
+    <br>
 </div>
 }
 
@@ -100,7 +115,6 @@ $foreach(img in images){
     comments[i].addEventListener("mouseleave", hideReply);
   }
   function revealReply() {
-    console.log("test")
     this.parentElement.querySelector(".reply-button").classList.remove("hidden");
   }
   function hideReply() {
