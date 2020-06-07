@@ -534,6 +534,23 @@ async function handle_get(request, response, params) {
       reload(request, response);
     }
   }
+  else if (request.url.startsWith("/search")){
+    var username=request.url.substring(8);
+    var sql = 'SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters WHERE username="' + username + '" LIMIT 1;';
+    var result = await query(sql);
+    var jsonObject = {};
+    result.forEach(function (value, index, array) {
+      var obj = {};
+      for (var col in columns) {
+        obj[columns[col]] = value[columns[col]];
+      }
+      jsonObject[index] = obj;
+    });
+    //console.log(jsonObject);
+    var content = JSON.stringify(jsonObject);
+    //console.log(content)
+    reply(response, content, "text/plain");
+  }
   log("");
 }
 
