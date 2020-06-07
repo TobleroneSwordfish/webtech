@@ -1,4 +1,5 @@
 $declare(comment_block){
+  <!-- block that is recursively copied for each comment -->
   <div class="comment">
     <div class="content">
       <div class="id">${comment.id}</div>
@@ -63,6 +64,7 @@ $foreach(img in images){
 </div>
 </div>
 
+<!-- script to make the reply box appear when you click the reply button -->
 <script>
   "use strict"
   var replyButtons = document.getElementsByClassName("reply-button");
@@ -89,6 +91,7 @@ $foreach(img in images){
   }
 </script>
 
+<!-- script to make the reply buttons appear when you mouse over them -->
 <script>
   "use strict"
   var comments = document.querySelectorAll(".comment .content");
