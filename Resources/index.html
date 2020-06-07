@@ -37,7 +37,6 @@ $if(loggedin){
 </div>
 <div class="logo logo-center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
 <div class="logo logo-right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
-
 </div>
 <br>
 <div class = "box">
@@ -316,7 +315,7 @@ $if(loggedin){
 </script>
 <script>
   "use strict"
-  let notification_socket = new WebSocket("ws://" + window.location.hostname + ":8080/notifications");
+  let notification_socket = new WebSocket("wss://" + window.location.hostname + ":" + window.location.port + "/notifications");
   notification_socket.onmessage = handle_notifications;
   // notification_socket.onopen = open_notification_socket();
   function handle_notifications(response){
@@ -329,8 +328,8 @@ $if(loggedin){
     box.innerHTML=data.text;
   }
 </script>
-<a id="tidy_logo" href="http://users.skynet.be/mgueury/mozilla/">
-  <img src="http://users.skynet.be/mgueury/mozilla/tidy_32.gif"
+<a id="tidy_logo">
+  <img src="/tidy_32.gif"
   alt="Validated by HTML Validator (based on Tidy) " height="32" width="78"/>
 </a>
 </body>

@@ -16,7 +16,8 @@
     "node-fetch": "^2.6.0",
     "path": "^0.12.7",
     "util": "^0.12.3",
-    "ws": "^7.3.0"
+    "ws": "^7.3.0",
+    "wss": "^3.3.4"
   },
   "devDependencies": {},
   "scripts": {

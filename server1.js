@@ -13,12 +13,13 @@ let sessions = require("client-sessions");
 let auth = require('./auth.js');
 let templating = require('./templating.js');
 const WebSocket = require('ws');
+const SecureWebSocket = require('wss');
 
 var properties = read_yaml();
 
 var requestSessionHandler = sessions({
   cookieName: "session",
-  secret: "there are no wolves on fenris",
+  secret: properties.cookie_secret || "there are no wolves on fenris",
   duration: 24 * 60 * 60 * 1000,
   activeDuration: 1000 * 60 * 5
 });
@@ -27,7 +28,10 @@ var requestSessionHandler = sessions({
 var con;
 
 //daybreak API ID
-var serviceID = "s:jtwebtech"
+var serviceID = properties.census_id;
+if (!serviceID) {
+  console.log("Missing service id, please set \"census_id\" in the properties file");
+}
 
 //websocket server to send notifications to clients
 var wss;
@@ -58,7 +62,8 @@ var pageMap = {
   "/TRlogo.svg":"sword.svg",
   "/NClogo.svg":"murica.svg",
   "/hex.svg":"hex.svg",
-  "/hex.png":"hex.png"
+  "/hex.png":"hex.png",
+  "/tidy_32.gif":"tidy_32.gif"
 }
 
 var adminPageMap = {
@@ -74,7 +79,7 @@ async function loadImages() {
   for (var i = 0; i < response.length; i++) {
     loadArt(response[i].filename, response[i].approved);
   }
-  var files = await fs.readdirSync("./Fanart");
+  var files = await fs.readdirSync("./Resources/Fanart");
   files.forEach(function(value, index, array) {
     if (!response.some((element) => element.filename == value)) {
       loadArt(value);
@@ -129,15 +134,24 @@ async function deleteArt(filename) {
 
 
 function start_server(port, ip) {
-  // const options = {
-  //   key: fs.readFileSync('key.pem'),
-  //   cert: fs.readFileSync('cert.pem')
-  // };
-  let server = HTTP.createServer(handle);
-  wss = new WebSocket.Server({server});
-  wss.on("connection", wss_connection);
+  const options = {
+    key: fs.readFileSync(properties.ssl_key_path),
+    cert: fs.readFileSync(properties.ssl_cert_path)
+  };
+  var server;
+  if (properties.ssl_enabled) {
+    server = HTTPS.createServer(options, handle);
+    server.listen(properties.https_port, ip);
+    wss = SecureWebSocket.createServerFrom(server, wss_connection);
+  }
+  else {
+    server = HTTP.createServer(handle);
+    server.listen(properties.http_port, ip);
+    wss = new WebSocket.Server({server});
+    wss.on("connection", wss_connection);
+  }
   // console.log(wss);
-  server.listen(port, ip);
+  
 }
 
 function wss_connection(ws) {
@@ -146,6 +160,7 @@ function wss_connection(ws) {
 }
 
 function client_close(ws) {
+  console.log("Websocket closed");
   notification_clients = notification_clients.splice(notification_clients.indexOf(ws), 1);
 }
 
@@ -241,8 +256,6 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
-  // var auth_resp = await auth.authenticateUser("foo", "hunter2");
-  // console.log(auth_resp);
 }
 
 //subscribe to census API events
@@ -256,14 +269,12 @@ function subscribe_events(socket) {
   var expTypes = [7, 53, 4, 5, 51];
   var eventTypes = ["PlayerLogout", "PlayerLogin", "Death"];
   var eventNames = expTypes.map((id) => "GainExperience_experience_id_" + id).concat(eventTypes);
-  // console.log(eventNames);
   socket.send(JSON.stringify({ "service": "event", "action": "subscribe", "characters": ["all"], "eventNames": eventNames, "worlds":[properties.world],"logicalAndCharactersWithWorlds":true }));
 }
 
 //handle an event sent by the API
 async function handle_event_response(event) {
   var jsonData = JSON.parse(event.data);
-  //console.log(jsonData);
   //ignore heartbeat messages
   if (jsonData.type == "heartbeat") {
     return
@@ -344,7 +355,6 @@ async function handle_death(payload) {
 }
 
 async function handle_revive(payload) {
-  // console.log("revive received");
   await create_if_new(payload.character_id);
   await create_if_new(payload.other_id);
   //actually increase the resurrections count
@@ -361,7 +371,6 @@ async function handle_revive(payload) {
     var victimName = await query(getName, [Number(payload.other_id)]);
     var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
-    // console.log(text);
     send_notification(text);
     var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
     query(forgive, [Number(payload.other_id), Number(payload.character_id)]);
@@ -385,7 +394,6 @@ async function get_character_data(id, ...properties) {
     params += properties.join("&c:show=");
   }
   var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
-  //console.log(requestString)
   var result = await try_fetch(requestString);
   if (result.status != 200) {
     console.log("API returned invalid response code " + result.status);
@@ -450,7 +458,6 @@ function handle(request, response) {
 }
 
 async function handle_get(request, response, params) {
-  console.log(request.url)
   log("params")
   log(params)
   log("get request with url: " + request.url)
@@ -480,9 +487,9 @@ async function handle_get(request, response, params) {
       send_file(file, response, type);
     }
   }
-  else if (request.url.startsWith("/notifications")) {
-    reply(response, JSON.stringify(notifications), "text/json");
-  }
+  // else if (request.url.startsWith("/notifications")) {
+  //   reply(response, JSON.stringify(notifications), "text/json");
+  // }
   else if (request.url.startsWith("/api/")) {
     var name = request.url.substring(5).split("?")[0];
     if (name==""){
