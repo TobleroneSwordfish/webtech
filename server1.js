@@ -134,12 +134,12 @@ async function deleteArt(filename) {
 
 
 function start_server(port, ip) {
-  const options = {
-    key: fs.readFileSync(properties.ssl_key_path),
-    cert: fs.readFileSync(properties.ssl_cert_path)
-  };
   var server;
   if (properties.ssl_enabled) {
+    const options = {
+      key: fs.readFileSync(properties.ssl_key_path),
+      cert: fs.readFileSync(properties.ssl_cert_path)
+    };
     server = HTTPS.createServer(options, handle);
     server.listen(properties.https_port, ip);
     wss = SecureWebSocket.createServerFrom(server, wss_connection);
@@ -647,6 +647,7 @@ async function getFanartNames(approved) {
 async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   var templateMap = {};
+  templateMap.session=request.session;
   //here we add stuff to the template map to be sent to the client
   templateMap.loggedin = request.session.loggedin;
   if (templateMap.loggedin) {
