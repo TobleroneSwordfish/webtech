@@ -608,6 +608,10 @@ async function handle_post(request, response, params) {
         }
       });
   }
+  else if (url == "/delete-user") {
+    var form = new formidable.IncomingForm();
+    form.parse(request, (err, fields, files) => auth.deleteUser(fields.adminUser, fields.adminPass, fields.usernameToDelete));
+  }
 }
 
 async function parse_fanart(err, fields, files) {
