@@ -256,8 +256,8 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
-  var id = await post_comment(1, "hai");
-  post_comment(1, "oh hello there", id);
+  var id = await post_comment(1, 1, "hai");
+  post_comment(1, 2, "oh hello there", id);
 }
 
 //subscribe to census API events
@@ -565,7 +565,7 @@ async function handle_get(request, response, params) {
 
 async function handle_post(request, response, params) {
   var url = request.url;
-  console.log(request.url)
+  // console.log(request.url)
   if (url == "/fanart") {
     if (!request.session.loggedin) {
       return;
@@ -574,6 +574,15 @@ async function handle_post(request, response, params) {
     form.parse(request, parse_fanart);
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
+  }
+  else if (request.url.startsWith("/fanart/comment")) {
+    var form = formidable.IncomingForm();
+    var userId = await get_user_id(request.session.username);
+    form.parse(request, (err, fields, files) => {
+      if (err) throw err;
+      post_comment(Number(fields.fanart_id), userId, fields.content, Number(fields.parent_id));
+    })
+    reload(request, response);
   }
   else if (request.url.startsWith("/logout")) {
     log("logging out")
@@ -607,6 +616,12 @@ async function parse_fanart(err, fields, files) {
   await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
   loadArt(files.filename.name);
   storeArt(files.filename.name)
+}
+
+async function get_user_id(username) {
+  var q = "SELECT id FROM users WHERE username=?;";
+  var result = await query(q, [username]);
+  return result[0].id;
 }
 
 async function redirect(response, location) {
@@ -657,15 +672,15 @@ async function getCommentChildren(comment) {
   return [];
 }
 
-async function post_comment(fanart_id, content, parent_id) {
+async function post_comment(fanart_id, user_id, content, parent_id) {
   //cause apparently mysql can't understand nulls even though it should
   if (parent_id != undefined) {
-    var q = "INSERT INTO comments (fanart_id, content, parent_id) VALUES (?,?,?);"
-    await query(q, [fanart_id, content, parent_id]);
+    var q = "INSERT INTO comments (fanart_id, user_id, content, parent_id) VALUES (?,?,?,?);"
+    await query(q, [fanart_id, user_id, content, parent_id]);
   }
   else {
-    var q = "INSERT INTO comments (fanart_id, content) VALUES (?,?);"
-    await query(q, [fanart_id, content]);
+    var q = "INSERT INTO comments (fanart_id, user_id, content) VALUES (?,?,?);"
+    await query(q, [fanart_id, user_id, content]);
   }
   var q = "SELECT LAST_INSERT_ID();"
   var result = await query(q);
@@ -693,6 +708,13 @@ async function send_page(filePath, request, response) {
       img.comments = topLevels;
     }
     templateMap.images = images;
+    var q = "SELECT username, id FROM users;";
+    var result = await query(q);
+    var userMap = {};
+    for (var user of result) {
+      userMap[user.id] = user.username;
+    }
+    templateMap.users = userMap;
   }
   else if (filePath == "approve.html") {
     templateMap["images"] = await getFanart(false);

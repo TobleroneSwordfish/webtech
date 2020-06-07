@@ -1,8 +1,13 @@
 $declare(comment_block){
   <div class="comment">
-    <div class="id">${comment.id}</div>
     <div class="content">
+      <div class="id">${comment.id}</div>
+      <div class="fanart_id hidden">${comment.fanart_id}</div>
+      <strong>${users[comment.user_id]}</strong>
+      <br>
       ${comment.content}
+      <br>
+      <button class="reply-button">Reply</button>
     </div>
     $foreach(comment in comment.children){
       ${comment_block}
@@ -20,17 +25,20 @@ $declare(comment_block){
 </head>
 
 <body>
-<ul class="navbar horizontal">
+<ul class="user-navbar horizontal">
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
   <li><a href="/login">
   $if(session.loggedin){
-    Logged in as ${username}
+    Logged in as ${session.username}
   }else{
     Login
   }
   </a></li>
 </ul>
+<div class="dark">
+<div class = "top">
+
 $if(session.loggedin){
 <form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
@@ -45,9 +53,47 @@ $foreach(img in images){
     <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
     }
     $foreach(comment in img.comments){
-      ${comment_block}
+      <div class="comment-chain">
+        ${comment_block}
+      </div>
     }
 </div>
 }
+
+</div>
+</div>
+
+<script>
+  var replyButtons = document.getElementsByClassName("reply-button");
+  for (var i = 0; i < replyButtons.length; i++) {
+    replyButtons[i].addEventListener("click", openReplyForm);
+  }
+  function openReplyForm() {
+    const form = document.getElementById("form-prototype");
+    var clone = form.cloneNode(true);
+    clone.classList.toggle("hidden");
+    clone.removeAttribute("id");
+    clone.getElementsByClassName("cancel-reply")[0].addEventListener("click", closeReplyForm);
+    console.log(this.parentElement.getElementsByClassName("id"));
+    clone.getElementsByClassName("parent_id")[0].value = this.parentElement.getElementsByClassName("id")[0].innerHTML;
+    clone.getElementsByClassName("fanart_id")[0].value = this.parentElement.getElementsByClassName("fanart_id")[0].innerHTML;
+    this.parentElement.appendChild(clone);
+    this.classList.toggle("hidden");
+  }
+  function closeReplyForm() {
+    this.parentElement.parentElement.getElementsByClassName("reply-button")[0].classList.toggle("hidden");
+    this.parentElement.remove();
+  }
+</script>
+
+<form id="form-prototype" class="hidden comment-form" action="/fanart/comment" method="post">
+  <input type="hidden" name="parent_id" class="parent_id">
+  <input type="hidden" name="fanart_id" class="fanart_id">
+  <textarea name="content" rows="6">
+  </textarea>
+  <br>
+  <button type="submit">Submit</button>
+  <button class="cancel-reply" type="button">Cancel</button>
+</form>
 </body>
 </html>
