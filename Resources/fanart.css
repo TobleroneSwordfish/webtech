@@ -11,14 +11,14 @@ img{
 }
 
 .comment {
+    max-height: inherit;
+    max-width: inherit;
     margin-left: 2%;
     background-color: #2b2b2b;
 }
-/* .comment .content {
-    display: block;
-    background-color: #666699;
-    margin-left:4%;
-} */
+.comment .content .comment-text {
+    white-space: pre-line;
+}
 .comment-chain {
     border-radius: 8px;
     border-color: black;
@@ -31,7 +31,7 @@ img{
     resize: none;
 }
 
-.id {
+.no-display {
     display: none;
 }
 

@@ -584,7 +584,7 @@ async function handle_get(request, response, params) {
 async function handle_post(request, response, params) {
   var url = request.url;
   // console.log(request.url)
-  if (url == "/fanart") {
+  if (url == "/fanart") { //endpoint for uploading fanart
     if (!request.session.loggedin) {
       return;
     }
@@ -593,12 +593,12 @@ async function handle_post(request, response, params) {
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
   }
-  else if (request.url.startsWith("/fanart/comment")) {
+  else if (request.url.startsWith("/fanart/comment")) { //endpoint for posting comments on fanart
     var form = formidable.IncomingForm();
     var userId = await get_user_id(request.session.username);
     form.parse(request, (err, fields, files) => {
       if (err) throw err;
-      if (fields.parent_id == "undefined") {
+      if (fields.parent_id == "undefined" || fields.parent_id == "") { //top level comment
         fields.parent_id = undefined;
       }
       else {
@@ -614,7 +614,6 @@ async function handle_post(request, response, params) {
     redirect(response, "/");
   }
   else if (url == "/login") {
-    // console.log("login post received");
     var form = new formidable.IncomingForm();
     form.parse(request,
       async function(err, fields, files) {
