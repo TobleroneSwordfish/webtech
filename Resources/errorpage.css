@@ -1,0 +1,26 @@
+
+
+div{
+    background-color: #35353598;
+    z-index: 2001;
+    width:40%;
+    color: white;
+    list-style-type: none;
+    /* margin: 0; */
+    font-size: medium;
+    padding: 0;
+    /* display:block; */
+    /* position: sticky; */
+    margin-top: 30%;
+    margin-left: 30%;
+    left:auto;
+    text-align: center;
+}
+
+center{
+    text-align: center;
+}
+
+.inline {
+    display: inline;
+}

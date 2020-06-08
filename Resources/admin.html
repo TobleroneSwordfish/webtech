@@ -1,1 +1,123 @@
-seeeecrets
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<link rel="stylesheet" type="text/css" href="admin.css">
+<ul class="admin-navbar horizontal">
+<meta charset="UTF-8">
+<title>Planetside 2 stats</title>
+</head>
+<body>
+    <li><a href="/">Home</a></li>
+    <li><a href="/fanart">Fanart</a></li>
+    <li><a href="/admin">Admin</a></li>
+    <li>
+      <form action="/logout" method="post" class="center nav-button"> Logged in as ${username}
+        <input type="submit" value="Logout" class="logout-button"></input>
+      </form>
+    </li>
+</ul>
+
+<div class="dark center">
+    <br>
+    Number of users per page:
+    <select id="userCount" name="# of users">
+        <option value="1" selected>1</option>
+        <option value="2">2</option>
+        <option value="20">20</option>
+        <option value="50">50</option>
+    </select>
+    <br>
+    <table id = users><thead><tr>
+        <th id = username class="wide" > Username </th>
+        <th id = adminStatus> Admin </th>
+    </tr></thead></table>
+<br>
+<a href="javascript:previous();">&lt</a>
+Page: <span id="pageNumber">0</span>
+<a href="javascript:next();">&gt</a>
+</div>
+</body>
+<script>
+    addEventListener("load", setup);
+
+    function setup(){
+        fetch("/admin/").then(handleTable);
+    }
+
+    function handleTable(response) {
+        response.text().then(storeData)
+    }
+    
+    function storeData(data) {
+        console.log(data)
+        userData = data
+        dataLength=JSON.parse(data).length;
+        // console.log(dataLength)
+        fillTable(start,1);
+    }
+
+    function resetTable(){
+        var length = document.getElementById("users").rows.length;
+        for (var i=1; i<length; i++){
+            document.getElementById("users").deleteRow(1);
+        }
+    }
+
+    const colnames = {
+        username: 0,
+        adminStatus: 1
+    }
+
+    var start=0;
+    var userData;
+    var dataLength=0;
+    var resultsPerPage=1;
+
+    function next() {
+        if(((start+resultsPerPage)*resultsPerPage)< dataLength){
+            start++;
+            document.getElementById("pageNumber").innerHTML=start;
+            fillTable(start,resultsPerPage);
+        }
+    }
+    function previous() {
+        if(start > 0){
+            start--
+            document.getElementById("pageNumber").innerHTML=start;
+            fillTable(start,resultsPerPage);
+        }
+    }
+
+    function fillTable(pageIndex,resultsPerPage){
+        data=userData;
+        var obj = JSON.parse(data);
+        // console.log(start)
+        var offset=pageIndex*resultsPerPage;//page 2=10, page 3=20;
+        // console.log(offset)
+        var limit=offset+resultsPerPage;
+        if (limit>dataLength){
+            limit=dataLength;
+        }
+        resetTable();
+        var table = document.getElementById("users");
+        table.appendChild(document.createElement('tbody'));
+        var table = document.getElementById("users").getElementsByTagName("tbody")[0];
+        for (var u= offset; u < limit; u++){
+            console.log(u)
+            var row = table.insertRow(-1);
+            for (var p in colnames){
+                var cell = row.insertCell(-1);
+                cell.innerHTML = obj[u][p];
+            }
+        }
+    }
+    document.getElementById("userCount").addEventListener("click",updateResultsPerPage);
+
+    function updateResultsPerPage(){
+        var previousResults=start*resultsPerPage;
+        resultsPerPage=document.getElementById("userCount").options[document.getElementById("userCount").selectedIndex].value;
+        start=previousResults/resultsPerPage
+        document.getElementById("pageNumber").innerHTML=start;
+        fillTable(start,resultsPerPage);
+    }
+</script>

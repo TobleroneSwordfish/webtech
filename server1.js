@@ -51,10 +51,13 @@ request_events();
 
 var pageMap = {
   "/":"index.html",
+  "/navbar":"navbar.html",
   "/favicon.ico":"favicon.ico", //we have to serve this locally because deybreak's cdn is weird
   "/fanart":"fanart.html",
   "/login":"login.html",
   "/test":"test.txt",
+  "/errorpage":"errorpage.html",
+  "/errorpage.css":"errorpage.css",
   "/style.css":"style.css",
   "/fanart.css":"fanart.css",
   "/loginstyle.css":"loginstyle.css",
@@ -68,6 +71,7 @@ var pageMap = {
 
 var adminPageMap = {
   "/admin":"admin.html",
+  "/admin.css":"admin.css",
   "/approve":"approve.html"
 }
 
@@ -490,6 +494,15 @@ async function handle_get(request, response, params) {
   // else if (request.url.startsWith("/notifications")) {
   //   reply(response, JSON.stringify(notifications), "text/json");
   // }
+  else if (request.url.startsWith("/admin/")) {
+    if (request.session.admin) {
+      var sql = "SELECT username, admin AS adminStatus FROM users ORDER BY username ASC LIMIT 10;";
+      var result = await query(sql);
+      var content = JSON.stringify(result);
+      reply(response, content, "text/plain");
+    }
+    //add an else go to error page
+  }
   else if (request.url.startsWith("/api/")) {
     var name = request.url.substring(5).split("?")[0];
     if (name==""){
