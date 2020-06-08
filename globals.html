@@ -36,3 +36,17 @@ $declare(navbar){
         </ul>
         }
 }
+
+$declare(fix_height_script){
+    <script>
+        "use strict"
+        var h = document.getElementById('navbar').clientHeight;
+        var win = window,
+            doc = document,
+            docElem = doc.documentElement,
+            body = doc.getElementsByTagName('body')[0],
+            y = win.innerHeight|| docElem.clientHeight|| body.clientHeight;
+        var dark = document.getElementsByClassName("dark")[0];
+        dark.style.height=y-h+ 'px';
+    </script>
+}

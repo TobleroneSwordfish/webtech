@@ -70,15 +70,6 @@ ${navbar}
       logos[i].addEventListener("animationend", animEnd);
     }
   }
-  
-  var h = document.getElementById('navbar').clientHeight;
-  var win = window,
-    doc = document,
-    docElem = doc.documentElement,
-    body = doc.getElementsByTagName('body')[0],
-    y = win.innerHeight|| docElem.clientHeight|| body.clientHeight;
-  var dark = document.getElementsByClassName("dark")[0];
-  dark.style.height=y-h+ 'px';
 
   //adds or removes the "hidden" class on child objects of node that have class objClass according to state
   function toggleHidden(node, objClass, state) {
@@ -318,5 +309,6 @@ ${navbar}
   <img src="/tidy_32.gif"
   alt="Validated by HTML Validator (based on Tidy) " height="32" width="78"/>
 </a>
+${fix_height_script}
 </body>
 </html>
