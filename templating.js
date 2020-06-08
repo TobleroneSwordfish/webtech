@@ -1,8 +1,25 @@
 const vm = require("vm"); //ho boy
+const fs = require("fs");
+
+const globalsFile = "./globals.html";
+var globalMap = {};
+accquireGlobals();
+
+async function accquireGlobals() {
+    var content = await fs.readFileSync(globalsFile, "utf8");
+    globalMap = template(content, {}, true);
+}
 
 //takes the page content string and a map of variable names to values
 //returns the same content with the names changed to values
-function template(content, templateMap) {
+
+//the last param is optional and excluded from the exported version,
+//just makes it return the templateMap instead of the content
+//for loading global $declares
+function template(content, templateMap, returnMap) {
+    if (!returnMap) {
+        templateMap = {...globalMap, ...templateMap};
+    }
     if (typeof(content) != "string") {
         if (typeof(content) == "number") {
             content = content.toString();
@@ -30,7 +47,7 @@ function template(content, templateMap) {
                 }
             }
             else {
-                console.log("Missing }");
+                console.log("Missing } to match { at " + i);
                 break;
             }
         }
@@ -62,9 +79,13 @@ function template(content, templateMap) {
         }
         i = content.indexOf("$");
     }
-    return content;
+    return returnMap ? templateMap : content;
 }
-exports.template = template;
+
+function external_template(content, templateMap) {
+    return template(content, templateMap);
+}
+exports.template = external_template;
 
 function template_if(arguments, content, templateMap, i, blockStart) {
     var bodyEnd = find_end(content, "{}", blockStart);
