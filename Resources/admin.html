@@ -2,13 +2,11 @@
 <html lang="en-GB">
 <head>
 <link rel="stylesheet" type="text/css" href="admin.css">
-<ul class="admin-navbar horizontal">
 <meta charset="UTF-8">
 <title>Planetside 2 stats</title>
 </head>
 <body>
 ${navbar}
-
 <div class="dark center">
     <br>
     Number of users per page:
@@ -29,6 +27,7 @@ ${navbar}
 Page: <span id="pageNumber">1</span>
 <a href="javascript:next();">&gt</a>
 </div>
+${fix_height_script}
 </body>
 <script>
     addEventListener("load", setup);
