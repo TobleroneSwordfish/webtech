@@ -26,12 +26,12 @@ exports.authenticateUser = async function(username, password) {
     return false;
 }
 
-//delets the user only if we can authenticate them
-exports.deleteUser = async function(username, password) {
-    var allowed = await exports.authenticateUser(username, password)
+//delets the user only if we can authenticate the admin trying to delete it
+exports.deleteUser = async function(adminUser, adminPass, usernameToDelete) {
+    var allowed = await exports.authenticateUser(adminUser, adminPass)
     if (allowed) {
-        var q = "DELETE FROM users WHERE username = '" + username + "');";
-        query(q);
+        var q = "DELETE FROM users WHERE username = '" + usernameToDelete + "');";
+        await query(q);
         return true;
     }
     return false;

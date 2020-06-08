@@ -54,7 +54,7 @@ var pageMap = {
   "/navbar":"navbar.html",
   "/favicon.ico":"favicon.ico", //we have to serve this locally because deybreak's cdn is weird
   "/fanart":"fanart.html",
-  "/login":"login.html",
+  // "/login":"login.html",
   "/test":"test.txt",
   "/errorpage":"errorpage.html",
   "/errorpage.css":"errorpage.css",
@@ -104,12 +104,15 @@ function loadArt(filename, isapproved) {
     adminPageMap["/fanart/unapproved/" + filename] = filePath;
   }
 }
-async function storeArt(filename, isapproved) {
+async function storeArt(filename, isapproved, user_id) {
   if (isapproved == undefined) {
     isapproved = false;
   }
-  var q = "INSERT IGNORE INTO fanart (filename, approved) VALUES (?, ?);";
-  await query(q, [filename, isapproved]);
+  if (user_id == undefined) {
+    user_id = 1;
+  }
+  var q = "INSERT IGNORE INTO fanart (filename, approved, user_id) VALUES (?, ?, ?);";
+  await query(q, [filename, isapproved, user_id]);
 }
 function approveArt(filename, approve) {
   if (approve == undefined) {
@@ -123,16 +126,18 @@ function unapproveArt(filename) {
   approveArt(filename, false);
 }
 async function deleteArt(filename) {
-  var q = "SELECT filename FROM fanart WHERE filename = ?;";
+  var q = "SELECT id FROM fanart WHERE filename = ?;";
   var resp = await query(q, [filename]);
   if (resp.length > 0) {
     try {
-      await fs.unlinkSync(__dirname + "/Fanart/" + resp[0].filename);
+      await fs.unlinkSync(__dirname + "/Resources/Fanart/" + resp[0].filename);
     } catch (error) {
       console.log("Unable to delete art: " + error);
     }
-    var q = "DELETE FROM fanart WHERE filename = ?;";
-    query(q, [resp[0].filename]);
+    var q = "DELETE FROM comments WHERE fanart_id = ?;";
+    await query(q, [resp[0].id]);
+    q = "DELETE FROM fanart WHERE filename = ?;";
+    await query(q, [filename]);
   }
 }
 
@@ -260,6 +265,8 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
+  var id = await post_comment(1, 1, "hai");
+  post_comment(1, 2, "oh hello there", id);
 }
 
 //subscribe to census API events
@@ -550,7 +557,7 @@ async function handle_get(request, response, params) {
   }
   else if (request.url.startsWith("/fanart/delet")) {
     if (request.session.loggedin && request.session.admin) {
-      deleteArt(params.img);
+      await deleteArt(params.img);
       reload(request, response);
     }
   }
@@ -576,15 +583,30 @@ async function handle_get(request, response, params) {
 
 async function handle_post(request, response, params) {
   var url = request.url;
-  console.log(request.url)
+  // console.log(request.url)
   if (url == "/fanart") {
     if (!request.session.loggedin) {
       return;
     }
     var form = new formidable.IncomingForm();
-    form.parse(request, parse_fanart);
+    form.parse(request, (err, fields, files) => parse_fanart(err, fields, files, request));
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
+  }
+  else if (request.url.startsWith("/fanart/comment")) {
+    var form = formidable.IncomingForm();
+    var userId = await get_user_id(request.session.username);
+    form.parse(request, (err, fields, files) => {
+      if (err) throw err;
+      if (fields.parent_id == "undefined") {
+        fields.parent_id = undefined;
+      }
+      else {
+        fields.parent_id = Number(fields.parent_id);
+      }
+      post_comment(Number(fields.fanart_id), userId, fields.content, fields.parent_id);
+    })
+    reload(request, response);
   }
   else if (request.url.startsWith("/logout")) {
     log("logging out")
@@ -610,14 +632,24 @@ async function handle_post(request, response, params) {
         }
       });
   }
+  else if (url == "/delete-user") {
+    var form = new formidable.IncomingForm();
+    form.parse(request, (err, fields, files) => auth.deleteUser(fields.adminUser, fields.adminPass, fields.usernameToDelete));
+  }
 }
 
-async function parse_fanart(err, fields, files) {
+async function parse_fanart(err, fields, files, request) {
   if (err) throw err;
   log("Files uploaded " + JSON.stringify(files));
-  await fs.rename(files.filename.path, __dirname + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+  await fs.rename(files.filename.path, __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
   loadArt(files.filename.name);
-  storeArt(files.filename.name)
+  storeArt(files.filename.name, false, await get_user_id(request.session.username));
+}
+
+async function get_user_id(username) {
+  var q = "SELECT id FROM users WHERE username=?;";
+  var result = await query(q, [username]);
+  return result[0].id;
 }
 
 async function redirect(response, location) {
@@ -650,31 +682,70 @@ function parse_parameters(url){
   return dict;
 }
 
-async function getFanartNames(approved) {
-  var q = "SELECT filename FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
+async function getFanart(approved) {
+  var q = "SELECT id, filename, user_id FROM fanart WHERE " + (!approved ? "NOT" : "") +" approved;" //yeah okay but it's fixed values so it's fine
   var result = await query(q);
-  return result.map((element) => element.filename); //convert the SQL results into a simple array
+  return result; //convert the SQL results into a simple array
+}
+
+async function getCommentChildren(comment) {
+  var q = "SELECT * FROM comments WHERE parent_id = ?;";
+  var children = await query(q, [comment.id]);
+  if (children.length > 0) {
+    for (let child of children) {
+      child.children = await getCommentChildren(child);
+    }
+    return children;
+  }
+  return [];
+}
+
+async function post_comment(fanart_id, user_id, content, parent_id) {
+  //cause apparently mysql can't understand nulls even though it should
+  if (parent_id != undefined) {
+    var q = "INSERT INTO comments (fanart_id, user_id, content, parent_id) VALUES (?,?,?,?);"
+    await query(q, [fanart_id, user_id, content, parent_id]);
+  }
+  else {
+    var q = "INSERT INTO comments (fanart_id, user_id, content) VALUES (?,?,?);"
+    await query(q, [fanart_id, user_id, content]);
+  }
+  var q = "SELECT LAST_INSERT_ID();"
+  var result = await query(q);
+  return result[0]["LAST_INSERT_ID()"];
 }
 
 //template and send an HTML page
 async function send_page(filePath, request, response) {
   var content = await fs.readFileSync("./Resources/" + filePath, "utf8");
   var templateMap = {};
-  templateMap.session=request.session;
   //here we add stuff to the template map to be sent to the client
-  templateMap.loggedin = request.session.loggedin;
-  if (templateMap.loggedin) {
-    templateMap.username = request.session.username;
-  }
+  templateMap.session=request.session;
   if (filePath == "index.html") {
     var time = (new Date()).toDateString();
     templateMap["time"] = time;
   }
   else if (filePath == "fanart.html") {
-    templateMap["images"] = await getFanartNames(true);
+    var images = await getFanart(true);
+    for (let img of images) {
+      var q = "SELECT * FROM comments WHERE fanart_id = ? AND parent_id IS NULL;";
+      var topLevels = await query(q, [img.id]);
+      for (let comment of topLevels) {
+        comment.children = await getCommentChildren(comment);
+      }
+      img.comments = topLevels;
+    }
+    templateMap.images = images;
+    var q = "SELECT username, id FROM users;";
+    var result = await query(q);
+    var userMap = {};
+    for (var user of result) {
+      userMap[user.id] = user.username;
+    }
+    templateMap.users = userMap;
   }
   else if (filePath == "approve.html") {
-    templateMap["images"] = await getFanartNames(false);
+    templateMap["images"] = await getFanart(false);
   }
   content = templating.template(content, templateMap);
   // console.log("Content: " + content);

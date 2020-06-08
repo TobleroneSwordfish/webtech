@@ -1,3 +1,20 @@
+$declare(comment_block){
+  <!-- block that is recursively copied for each comment -->
+  <div class="comment">
+    <div class="content">
+      <div class="id">${comment.id}</div>
+      <div class="fanart_id hidden">${comment.fanart_id}</div>
+      <strong>${users[comment.user_id]}</strong>
+      <br>
+      ${comment.content}
+      <br>
+      <button class="reply-button hidden">Reply</button>
+    </div>
+    $foreach(comment in comment.children){
+      ${comment_block}
+    }
+  </div>
+}
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml"
   lang="en-GB" xml:lang="en-GB">
@@ -9,18 +26,33 @@
 </head>
 
 <body>
-<ul class="navbar horizontal">
+<ul class="user-navbar horizontal">
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
-  <li><a href="/login">
-  $if(loggedin){
-    Logged in as ${username}
+  <li>
+  $if(session.loggedin){
+    <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
+      <input type="submit" value="Logout" class="logout-button"></input>
+    </form>
   }else{
-    Login
+  <a class="popup" id="loginPopup">Login
+    <div class="popuptext" id="loginPopupText">
+      <form action="/login" method="post" class="center">
+        Username: <br>
+        <input type="text" name="username"> <br>
+        Password: <br>
+        <input type="password" name="password"> <br>
+        <input type="submit" class= "button">
+      </form>
+    </div>
+  </a>
   }
-  </a></li>
-</ul>
-$if(loggedin){
+  </li>
+  </ul>
+<div class="dark">
+<div class = "top">
+
+$if(session.loggedin){
 <form action="fanart" method="post" enctype="multipart/form-data">
     <input type="file" id="myFile" name="filename">
     <input type="submit">
@@ -28,11 +60,76 @@ $if(loggedin){
 }
 $foreach(img in images){
 <div>
-    <img src="/fanart/${img}"/>
-    $if(loggedin){
-    <a class="approval-button" href="/fanart/delet?img=${img}">Delete this piece</a>
+    <div class="id">${img.id}</div>
+    Uploaded by: ${users[img.user_id]}
+    <img src="/fanart/${img.filename}"/>
+    $if(session.loggedin && session.admin){
+    <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
     }
+    $foreach(comment in img.comments){
+      <div class="comment-chain">
+        ${comment_block}
+      </div>
+    }
+    <br>
+    <br>
 </div>
 }
+
+</div>
+</div>
+
+<!-- script to make the reply box appear when you click the reply button -->
+<script>
+  "use strict"
+  var replyButtons = document.getElementsByClassName("reply-button");
+  for (var i = 0; i < replyButtons.length; i++) {
+    replyButtons[i].addEventListener("click", openReplyForm);
+  }
+
+  function openReplyForm() {
+    const form = document.getElementById("form-prototype");
+    var clone = form.cloneNode(true);
+    clone.classList.toggle("hidden");
+    clone.removeAttribute("id");
+    clone.getElementsByClassName("cancel-reply")[0].addEventListener("click", closeReplyForm);
+    console.log(this.parentElement.getElementsByClassName("id"));
+    clone.getElementsByClassName("parent_id")[0].value = this.parentElement.getElementsByClassName("id")[0].innerHTML;
+    clone.getElementsByClassName("fanart_id")[0].value = this.parentElement.getElementsByClassName("fanart_id")[0].innerHTML;
+    this.parentElement.appendChild(clone);
+    this.classList.toggle("hidden");
+  }
+
+  function closeReplyForm() {
+    this.parentElement.parentElement.getElementsByClassName("reply-button")[0].classList.toggle("hidden");
+    this.parentElement.remove();
+  }
+</script>
+
+<!-- script to make the reply buttons appear when you mouse over them -->
+<script>
+  "use strict"
+  var comments = document.querySelectorAll(".comment .content");
+  for (var i = 0; i < comments.length; i++) {
+    comments[i].addEventListener("mouseover", revealReply);
+    comments[i].addEventListener("mouseleave", hideReply);
+  }
+  function revealReply() {
+    this.parentElement.querySelector(".reply-button").classList.remove("hidden");
+  }
+  function hideReply() {
+    this.parentElement.querySelector(".reply-button").classList.add("hidden");
+  }
+</script>
+
+<form id="form-prototype" class="hidden comment-form" action="/fanart/comment" method="post">
+  <input type="hidden" name="parent_id" class="parent_id">
+  <input type="hidden" name="fanart_id" class="fanart_id">
+  <textarea name="content" rows="6">
+  </textarea>
+  <br>
+  <button type="submit">Submit</button>
+  <button class="cancel-reply" type="button">Cancel</button>
+</form>
 </body>
 </html>

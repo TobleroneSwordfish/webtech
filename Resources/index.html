@@ -6,14 +6,13 @@
 <title>Planetside 2 stats</title>
 </head>
 <body>
-#include file="include_head.html"
 $if(!session.admin){
   <ul class="user-navbar horizontal" id="navbar">
   <li><a href="/">Home</a></li>
   <li><a href="/fanart">Fanart</a></li>
   <li>
-  $if(loggedin){
-    <form action="/logout" method="post" class="center nav-button"> Logged in as ${username}
+  $if(session.loggedin){
+    <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
       <input type="submit" value="Logout" class="logout-button"></input>
     </form>
   }else{
@@ -37,7 +36,7 @@ $if(!session.admin){
     <li><a href="/fanart">Fanart</a></li>
     <li><a href="/admin">Admin</a></li>
     <li>
-      <form action="/logout" method="post" class="center nav-button"> Logged in as ${username}
+      <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
         <input type="submit" value="Logout" class="logout-button"></input>
       </form>
     </li>
@@ -189,7 +188,7 @@ $if(!session.admin){
     }
   }
 
-  $if(!loggedin){
+  $if(!session.loggedin){
     document.body.addEventListener("click",toggleOffPopup,false);
 
     function toggleOffPopup() {

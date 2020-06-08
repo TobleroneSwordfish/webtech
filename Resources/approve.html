@@ -11,8 +11,8 @@
 <li><a href="/">Home</a></li>
 <li><a href="/fanart">Fanart</a></li>
 <li>
-$if(loggedin){
-  <a href="/logout">Logged in as ${username}</a>
+$if(session.loggedin){
+  <a href="/logout">Logged in as ${session.username}</a>
 }else{
   <a href="/login">Login</a>
 }
@@ -20,9 +20,9 @@ $if(loggedin){
 </ul>
 $foreach(img in images){
 <div>
-    <img src="/fanart/unapproved/${img}"/>
-    <a class="approval-button" href="/fanart/approve?img=${img}">Approve this piece</a>
-    <a class="approval-button" href="/fanart/delet?img=${img}">Delete this piece</a>
+    <img src="/fanart/unapproved/${img.filename}"/>
+    <a class="approval-button" href="/fanart/approve?img=${img.filename}">Approve this piece</a>
+    <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
 </div>
 }
 </body>

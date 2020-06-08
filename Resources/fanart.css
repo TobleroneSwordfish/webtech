@@ -9,3 +9,32 @@ img{
     background-color: #666699;
     color:white;
 }
+
+.comment {
+    margin-left: 2%;
+    background-color: #2b2b2b;
+}
+/* .comment .content {
+    display: block;
+    background-color: #666699;
+    margin-left:4%;
+} */
+.comment-chain {
+    border-radius: 8px;
+    border-color: black;
+    border-width: 2px;
+    border-style: solid;
+    background-color: #2b2b2b;
+}
+.comment-form textarea{
+    width:80%;
+    resize: none;
+}
+
+.id {
+    display: none;
+}
+
+form#form-prototype.comment-form {
+    display: none;
+}
