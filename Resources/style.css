@@ -441,6 +441,7 @@ ul.admin-navbar li a:hover {
     width: 100%;
     cursor: pointer;
     text-align: center;
+    font-size: medium;
     display:block;
     background-color: #666699;
 }
