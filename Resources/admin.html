@@ -22,7 +22,7 @@
     Number of users per page:
     <select id="userCount" name="# of users">
         <option value="1" selected>1</option>
-        <option value="2">2</option>
+        <option value="5">5</option>
         <option value="20">20</option>
         <option value="50">50</option>
     </select>
@@ -33,7 +33,7 @@
     </tr></thead></table>
 <br>
 <a href="javascript:previous();">&lt</a>
-Page: <span id="pageNumber">0</span>
+Page: <span id="pageNumber">1</span>
 <a href="javascript:next();">&gt</a>
 </div>
 </body>
@@ -74,16 +74,16 @@ Page: <span id="pageNumber">0</span>
     var resultsPerPage=1;
 
     function next() {
-        if(((start+resultsPerPage)*resultsPerPage)< dataLength){
+        if(((start+1)*resultsPerPage+1)<= dataLength){
             start++;
-            document.getElementById("pageNumber").innerHTML=start;
+            document.getElementById("pageNumber").innerHTML=start+1;
             fillTable(start,resultsPerPage);
         }
     }
     function previous() {
         if(start > 0){
             start--
-            document.getElementById("pageNumber").innerHTML=start;
+            document.getElementById("pageNumber").innerHTML=start+1;
             fillTable(start,resultsPerPage);
         }
     }
@@ -99,6 +99,10 @@ Page: <span id="pageNumber">0</span>
             limit=dataLength;
         }
         resetTable();
+        console.log("start is")
+        console.log(typeof(start))
+        console.log("limit is")
+        console.log(limit)
         var table = document.getElementById("users");
         table.appendChild(document.createElement('tbody'));
         var table = document.getElementById("users").getElementsByTagName("tbody")[0];
@@ -115,9 +119,9 @@ Page: <span id="pageNumber">0</span>
 
     function updateResultsPerPage(){
         var previousResults=start*resultsPerPage;
-        resultsPerPage=document.getElementById("userCount").options[document.getElementById("userCount").selectedIndex].value;
-        start=previousResults/resultsPerPage
-        document.getElementById("pageNumber").innerHTML=start;
+        resultsPerPage=Number(document.getElementById("userCount").options[document.getElementById("userCount").selectedIndex].value);
+        start=parseInt(previousResults/resultsPerPage)
+        document.getElementById("pageNumber").innerHTML=start+1;
         fillTable(start,resultsPerPage);
     }
 </script>
