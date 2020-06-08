@@ -22,6 +22,7 @@ ${navbar}
     <table id = users><thead><tr>
         <th id = username class="wide" > Username </th>
         <th id = adminStatus> Admin </th>
+        <th> Delete User</th>
     </tr></thead></table>
 <br>
 <a href="javascript:previous();">&lt</a>
@@ -83,28 +84,24 @@ Page: <span id="pageNumber">1</span>
     function fillTable(pageIndex,resultsPerPage){
         data=userData;
         var obj = JSON.parse(data);
-        // console.log(start)
-        var offset=pageIndex*resultsPerPage;//page 2=10, page 3=20;
-        // console.log(offset)
+        var offset=pageIndex*resultsPerPage;
         var limit=offset+resultsPerPage;
         if (limit>dataLength){
             limit=dataLength;
         }
         resetTable();
-        console.log("start is")
-        console.log(typeof(start))
-        console.log("limit is")
-        console.log(limit)
         var table = document.getElementById("users");
         table.appendChild(document.createElement('tbody'));
         var table = document.getElementById("users").getElementsByTagName("tbody")[0];
         for (var u= offset; u < limit; u++){
-            console.log(u)
             var row = table.insertRow(-1);
             for (var p in colnames){
                 var cell = row.insertCell(-1);
                 cell.innerHTML = obj[u][p];
             }
+            var cell = row.insertCell(-1);
+            var button = document. createElement("button");
+            button. innerHTML = "Delete user";
         }
     }
     document.getElementById("userCount").addEventListener("click",updateResultsPerPage);
@@ -117,3 +114,4 @@ Page: <span id="pageNumber">1</span>
         fillTable(start,resultsPerPage);
     }
 </script>
+</html>

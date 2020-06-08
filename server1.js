@@ -265,6 +265,15 @@ async function try_fetch(url) {
 async function startup() {
   auth.createUser("foo", "hunter2", true);
   auth.createUser("bar", "hunter3");
+  auth.createUser("a", "hunter3");
+  auth.createUser("b", "hunter3");
+  auth.createUser("c", "hunter3");
+  auth.createUser("d", "hunter3");
+  auth.createUser("e", "hunter3");
+  auth.createUser("f", "hunter3");
+  auth.createUser("g", "hunter3");
+  auth.createUser("h", "hunter3");
+  auth.createUser("i", "hunter3");
   var id = await post_comment(1, 1, "hai");
   post_comment(1, 2, "oh hello there", id);
 }
@@ -503,7 +512,7 @@ async function handle_get(request, response, params) {
   // }
   else if (request.url.startsWith("/admin/")) {
     if (request.session.admin) {
-      var sql = "SELECT username, admin AS adminStatus FROM users ORDER BY username ASC LIMIT 10;";
+      var sql = "SELECT username, admin AS adminStatus FROM users ORDER BY username ASC;";
       var result = await query(sql);
       var content = JSON.stringify(result);
       reply(response, content, "text/plain");
