@@ -7,17 +7,7 @@
 <title>Planetside 2 stats</title>
 </head>
 <body>
-<ul class="navbar horizontal">
-<li><a href="/">Home</a></li>
-<li><a href="/fanart">Fanart</a></li>
-<li>
-$if(session.loggedin){
-  <a href="/logout">Logged in as ${session.username}</a>
-}else{
-  <a href="/login">Login</a>
-}
-</li>
-</ul>
+${navbar}
 $foreach(img in images){
 <div>
     <img src="/fanart/unapproved/${img.filename}"/>
