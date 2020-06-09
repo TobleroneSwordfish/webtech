@@ -169,8 +169,14 @@ ${navbar}
   document.getElementById("searchRequest").addEventListener("click", searchForPlayer);
 
   function searchForPlayer(){
-    search=true;
-    fetch("/search/"+document.getElementById("search").value).then(handleTable)
+    if (document.getElementById("search").value!=""){
+      search=true;
+      fetch("/search/"+document.getElementById("search").value).then(handleTable);
+    }
+    else{
+      search=false;
+      fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
+    }
   }
   
   document.getElementById("search").addEventListener("keyup", clickSearchButton)
