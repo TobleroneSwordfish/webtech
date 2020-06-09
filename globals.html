@@ -23,7 +23,7 @@ $declare(navbar){
         }
         </li>
         </ul>
-        }else{
+    }else{
         <ul class="admin-navbar horizontal" id="navbar">
             <li><a href="/">Home</a></li>
             <li><a href="/fanart">Fanart</a></li>
@@ -34,30 +34,30 @@ $declare(navbar){
             </form>
             </li>
         </ul>
+    }
+    $if(!session.loggedin){
+    <script>
+        document.body.addEventListener("click",toggleOffPopup,false);
+    
+        function toggleOffPopup() {
+            var popup=document.getElementById('loginPopupText');
+            if (popup.classList.contains("show")){
+                popup.classList.toggle("show");
+            }
         }
-        $if(!session.loggedin){
-        <script>
-            document.body.addEventListener("click",toggleOffPopup,false);
-        
-            function toggleOffPopup() {
-              var popup=document.getElementById('loginPopupText');
-                if (popup.classList.contains("show")){
-                  popup.classList.toggle("show");
-                }
-            }
-        
-            document.getElementById("loginPopup").addEventListener("click",togglePopup);
-            function togglePopup() {
-              var popup = document.getElementById("loginPopupText");
-              popup.classList.toggle("show");
-            }
-            document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
-            function stopPropagation(ev) {
-              console.log("called stoppropagation")
-              ev.stopPropagation();
-            }
-         </script>
+    
+        document.getElementById("loginPopup").addEventListener("click",togglePopup);
+        function togglePopup() {
+            var popup = document.getElementById("loginPopupText");
+            popup.classList.toggle("show");
         }
+        document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
+        function stopPropagation(ev) {
+            console.log("called stoppropagation")
+            ev.stopPropagation();
+        }
+        </script>
+    }
 }
 
 $declare(fix_height_script){

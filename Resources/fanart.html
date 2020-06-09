@@ -65,6 +65,7 @@ $if(session.loggedin){
 }
 </div>
 
+$if(session.loggedin){
 <script>
   "use strict"
   document.querySelector("#fanart-upload #myFile").addEventListener("change", upload);
@@ -116,6 +117,7 @@ $if(session.loggedin){
     this.parentElement.querySelector(".reply-button:not(.static-button)").classList.add("hidden");
   }
 </script>
+}
 
 <form id="form-prototype" class="comment-form" action="/fanart/comment" method="post">
   <input type="hidden" name="parent_id" class="parent_id">

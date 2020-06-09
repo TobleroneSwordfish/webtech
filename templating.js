@@ -129,7 +129,7 @@ function template_if(parameters, content, templateMap, i, blockStart) {
         var elseBody = content.substring(elseStart + 1, elseEnd - 1);
         bodyEnd = elseEnd;
         if (!value) {
-            var bodyResult = template(body, templateMap);
+            var bodyResult = template(elseBody, templateMap);
             content = content.substring(0, i - 1) + bodyResult + content.substring(bodyEnd + 1);
             return [content, i + bodyResult.length]
         }
