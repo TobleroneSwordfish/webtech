@@ -799,7 +799,7 @@ async function send_page(filePath, request, response) {
   else if (filePath == "fanart.html") {
     var images = await getFanart(true);
     for (let img of images) {
-      var topLevels = await dbmodule.SELECT("comments",["*"],[],[["fanart_id",img.id],["parent_id",null]],["AND"], [],0,false);
+      var topLevels = await dbmodule.SELECT("comments",["*"],[],[["fanart_id",img.id],["parent_id","NULL"]],["AND"], [],0,false);
       // var q = "SELECT * FROM comments WHERE fanart_id = ? AND parent_id IS NULL;";
       // var topLevels = await query(q, [img.id]);
       for (let comment of topLevels) {
