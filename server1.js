@@ -252,26 +252,27 @@ async function try_fetch(url) {
       return;
     }
     else if (error.name == "FetchError")
-      if (err.code == "ECONNRESET") {
-        await sleep(200);
-        try {
-          var resp = await fetch(url);
-          return resp;
-        }
-        catch (err) {
-          return;
-        }
-      }
+      // if (err.code == "ECONNRESET") {
+      //   await sleep(200);
+      //   try {
+      //     var resp = await fetch(url);
+      //     return resp;
+      //   }
+      //   catch (err) {
+      //     return;
+      //   }
+      // }
       //for some ungodly reason, occasionally the census API tries to send us to an error page on the
       //old SOE site (company that used to run Planetside 2, now non-existent)
       //we're handling it here by simply complaining about it and moving on, as the loss of one request isn't too important
-      else if (err.message == "request to http://www.station.sony.com/services/en/sorry.htm failed, reason: getaddrinfo EAI_AGAIN www.station.sony.com") {
-        console.log("Census API tried to redirect us to the old SOE site, request ignored.");
-        return;
-      }
-      else {
-        throw err;
-      }
+      // else if (err.message == "request to http://www.station.sony.com/services/en/sorry.htm failed, reason: getaddrinfo EAI_AGAIN www.station.sony.com") {
+      //   console.log("Census API tried to redirect us to the old SOE site, request ignored.");
+      //   return;
+      // }
+      // else {
+        console.log("Fetch error: " + err.message);
+        // throw err;
+      // }
   }
 }
 
@@ -397,13 +398,14 @@ async function handle_revive(payload) {
   query(sql, [Number(payload.character_id)]);
   sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
   query(sql, [Number(payload.other_id)]);
-  send_notification("A player has been revived");
+
+  var getName = "SELECT username FROM characters WHERE id = ?;";
+  var victimName = await query(getName, [Number(payload.other_id)]);
+  send_notification(victimName[0].username + " has been revived");
   //check if this is a forgiveness revive
   var getTKs = "SELECT id FROM teamkills WHERE victim_id=? AND attacker_id=?;";
   var result = await query(getTKs, [Number(payload.other_id), Number(payload.character_id)]);
   if (result.length > 0) {
-    var getName = "SELECT username FROM characters WHERE id = ?;";
-    var victimName = await query(getName, [Number(payload.other_id)]);
     var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
     send_notification(text);

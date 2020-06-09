@@ -282,9 +282,11 @@ ${navbar}
   }
   function fill_notifications(data) {
     var box = document.body.querySelector("#notifications");
-    // var newElement = document.createElement("div");
-    // newElement.innerText = data.text;
-    box.innerHTML=data.text;
+    var newElement = document.createElement("div");
+    newElement.innerText = data.text;
+    box.appendChild(newElement);
+    box.scrollTop = box.scrollHeight;
+    // box.innerHTML=data.text;
   }
 </script>
 ${tidy_logo}
