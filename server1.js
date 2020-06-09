@@ -337,8 +337,8 @@ function sql_timestamp(date) {
 async function handle_login(payload) {
   await create_if_new(payload.character_id);
   dbmodule.UPDATE("characters",["last_login","id"],[sql_timestamp(new Date()), Number(payload.character_id)]);
-  // var sql = "UPDATE characters SET last_login = ? WHERE id = ?;";
-  // query(sql, [sql_timestamp(new Date()), Number(payload.character_id)]);
+  var character = await get_character_data(payload.character_id, "name")
+  send_notification(character.name.first + " has logged in");
 }
 
 async function handle_death(payload) {
@@ -379,7 +379,7 @@ async function handle_revive(payload) {
   dbmodule.UPDATE("characters",["times_revived","id"],[Number(payload.other_id)]);
   // sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
   // query(sql, [Number(payload.other_id)]);
-  send_notification("A player has been revived");
+  // send_notification("A player has been revived");
   var victimName =  await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.other_id)]],[], [],0,false);
   // var getName = "SELECT username FROM characters WHERE id = ?;";
   // var victimName = await query(getName, [Number(payload.other_id)]);
