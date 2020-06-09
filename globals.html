@@ -1,11 +1,11 @@
 $declare(navbar){
     $if(!session.admin){
-        <ul class="user-navbar horizontal" id="navbar">
+        <ul class="user-navbar" id="navbar">
         <li><a href="/">Home</a></li>
         <li><a href="/fanart">Fanart</a></li>
         <li>
         $if(session.loggedin){
-            <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
+            <form action="/logout" method="post" class="center nav-button"> Logged in as $escape{session.username}
             <input type="submit" value="Logout" class="logout-button"></input>
             </form>
         }else{
@@ -23,21 +23,45 @@ $declare(navbar){
         }
         </li>
         </ul>
-        }else{
+    }else{
         <ul class="admin-navbar horizontal" id="navbar">
             <li><a href="/">Home</a></li>
             <li><a href="/fanart">Fanart</a></li>
             <li><a href="/admin">Admin</a></li>
             <li>
-            <form action="/logout" method="post" class="center nav-button"> Logged in as ${session.username}
+            <form action="/logout" method="post" class="center nav-button"> Logged in as $escape{session.username}
                 <input type="submit" value="Logout" class="logout-button"></input>
             </form>
             </li>
         </ul>
+    }
+    $if(!session.loggedin){
+    <script>
+        document.body.addEventListener("click",toggleOffPopup,false);
+    
+        function toggleOffPopup() {
+            var popup=document.getElementById('loginPopupText');
+            if (popup.classList.contains("show")){
+                popup.classList.toggle("show");
+            }
         }
+    
+        document.getElementById("loginPopup").addEventListener("click",togglePopup);
+        function togglePopup() {
+            var popup = document.getElementById("loginPopupText");
+            popup.classList.toggle("show");
+        }
+        document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
+        function stopPropagation(ev) {
+            console.log("called stoppropagation")
+            ev.stopPropagation();
+        }
+        </script>
+    }
 }
 
 $declare(fix_height_script){
+    <!-- script to fix the height of the page -->
     <script>
         "use strict"
         var h = document.getElementById('navbar').clientHeight;
@@ -49,4 +73,8 @@ $declare(fix_height_script){
         var dark = document.getElementsByClassName("dark")[0];
         dark.style.height=y-h+ 'px';
     </script>
+}
+
+$declare(tidy_logo){
+<img src="/tidy_32.gif" id="tidy_logo" alt="Validated by HTML Validator (based on Tidy) " height="32" width="78"/>
 }

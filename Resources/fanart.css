@@ -11,30 +11,51 @@ img{
 }
 
 .comment {
+    max-height: inherit;
+    max-width: inherit;
     margin-left: 2%;
     background-color: #2b2b2b;
 }
-/* .comment .content {
-    display: block;
-    background-color: #666699;
-    margin-left:4%;
-} */
+.comment .content .comment-text {
+    white-space: pre-line;
+}
 .comment-chain {
     border-radius: 8px;
     border-color: black;
     border-width: 2px;
     border-style: solid;
     background-color: #2b2b2b;
+    padding-top: 10px;
 }
 .comment-form textarea{
     width:80%;
     resize: none;
 }
 
-.id {
+.no-display {
     display: none;
 }
 
 form#form-prototype.comment-form {
     display: none;
+}
+
+#upload-box {
+    float: right;
+    margin-top: 10%;
+    box-sizing: content-box;
+    width: 10%;
+    /* border-radius: 8px;
+    border-color: black;
+    border-width: 2px;
+    border-style: solid; */
+    background-color: #2b2b2b;
+    padding-top: 10px;
+    overflow: hidden;
+}
+
+#page-container {
+    width:100%;
+    overflow:auto;
+    margin:0;
 }

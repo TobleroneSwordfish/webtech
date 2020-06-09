@@ -1,13 +1,14 @@
 <!DOCTYPE html>
 <html lang="en-GB">
 <head>
+<link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="admin.css">
 <meta charset="UTF-8">
 <title>Planetside 2 stats</title>
 </head>
 <body>
 ${navbar}
-<div class="dark center">
+<div class="dark center text">
     <br>
     Number of users per page:
     <select id="userCount" name="# of users">
@@ -45,6 +46,7 @@ ${navbar}
 Page: <span id="pageNumber">1</span>
 <a href="javascript:next();">&gt</a>
 </div>
+${tidy_logo}
 ${fix_height_script}
 </body>
 <script>

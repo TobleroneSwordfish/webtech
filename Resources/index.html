@@ -8,12 +8,16 @@
 <body>
 ${navbar}
 <div class="dark">
-<div class = "top">
+<div class = "top text">
 <div class="logo logo-left"><img src="/VSlogo.svg" class="logo-img center" alt="Aliens">
-<div class="faction-info hidden">aaaaaaaaaaaaaaaa fuckity fuck fuck fuck</div>
+  <div class="faction-info hidden">A technocratic faction that believes humanity can only evolve by rediscovering and tapping the lost technology of the Vanu. The Vanu Sovereignty are a transhumanist cult of academics, intellectuals, and technology worshippers who believe that human destiny lies in the further development and exploitation of the alien technology.</div>
 </div>
-<div class="logo logo-center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans"></div>
-<div class="logo logo-right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys"></div>
+<div class="logo logo-center"><img src="/NClogo.svg" class="logo-img center" alt="Muricans">
+  <div class="faction-info hidden">A loosely connected group of rebel factions and idealistic freedom fighters, the New Conglomerate fights against the hegemony of the Terran Republic. The New Conglomerate is a separatist faction determined to remain free of the controlling and domineering Republic. They feel that any form of control is oppression and that a miserable free man is better off than a contented slave.</div>
+</div>
+<div class="logo logo-right"><img src="/TRlogo.svg" class="logo-img center" alt="The Bad Guys">
+  <div class="faction-info hidden">The Terran Republic (TR) is an empire with a rich history extending 1,112 years, and is the originator of the other two empires. They brought order out of chaos and introduced an era of peace to the world. Since the armistice and the formation of the new government, they were the singular political force on Earth, and they set up an open and transparent government. This helped keep the peace for nearly two hundred years.</div>
+</div>
 </div>
 <br>
 <div class = "box">
@@ -141,28 +145,6 @@ ${navbar}
     if (this.classList.contains(expandTag)) {
       this.classList.remove(expandTag);
       this.classList.add(expandedTag);
-    }
-  }
-
-  $if(!session.loggedin){
-    document.body.addEventListener("click",toggleOffPopup,false);
-
-    function toggleOffPopup() {
-      var popup=document.getElementById('loginPopupText');
-        if (popup.classList.contains("show")){
-          popup.classList.toggle("show");
-        }
-    }
-
-    document.getElementById("loginPopup").addEventListener("click",togglePopup);
-    function togglePopup() {
-      var popup = document.getElementById("loginPopupText");
-      popup.classList.toggle("show");
-    }
-    document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
-    function stopPropagation(ev) {
-      console.log("called stoppropagation")
-      ev.stopPropagation();
     }
   }
 
@@ -300,15 +282,14 @@ ${navbar}
   }
   function fill_notifications(data) {
     var box = document.body.querySelector("#notifications");
-    // var newElement = document.createElement("div");
-    // newElement.innerText = data.text;
-    box.innerHTML=data.text;
+    var newElement = document.createElement("div");
+    newElement.innerText = data.text;
+    box.appendChild(newElement);
+    box.scrollTop = box.scrollHeight;
+    // box.innerHTML=data.text;
   }
 </script>
-<a id="tidy_logo">
-  <img src="/tidy_32.gif"
-  alt="Validated by HTML Validator (based on Tidy) " height="32" width="78"/>
-</a>
+${tidy_logo}
 ${fix_height_script}
 </body>
 </html>

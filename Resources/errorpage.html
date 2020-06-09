@@ -8,15 +8,18 @@
 </head>
 <body>
 ${navbar}
+<div class="dark text">
 <br>
 <br>
-<div>
+<div class="error-message">
     Oops, this isn't the page you are looking for! Try going to the <a href="/">Homepage</a></li>
-    $if(loggedin){
+    $if(session.loggedin){
         or try <form action="/logout" method="post" class="center inline button">
             <input type="submit" value="logging out" class="button"></input>
           </form>
     }
 </div>
+</div>
+${tidy_logo}
 ${fix_height_script}
 </body>
