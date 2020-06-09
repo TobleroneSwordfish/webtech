@@ -1,0 +1,44 @@
+<ul>
+    <li>B for HTML</li>
+    <li>B for CSS</li>
+    <li>B for JS</li>
+    <li>A for PNG</li>
+    <li>A for SVG</li>
+    <li>B for Server</li>
+    <li>B for Database</li>
+    <li>B for Dynamic pages</li>
+    </ul>
+    The project is a website for displaying live updating statistics about the game Planetside 2. Conveniently the game has an API located at http://census.daybreakgames.com/
+    The server gets information from the API, stores it in a database and relays it to the client.
+    We are Theano Xirouchaki (tx17079) and Jonny Hall (jh17979).
+    <p>
+        HTML: We have one somewhat fleshed out page and one barebones, both have been validated using an HTML validator (http://users.skynet.be/mgueury/mozilla/)
+    </p>
+    <p>
+        CSS: We have stylesheets, animations and no inline styling in the HTML file.
+    </p>
+    <p>
+        JS: We are using client side JS to fetch data from the server at runtime and display it on the page as well as establishing a websocket connection with the
+        server to receive notifications.
+    </p>
+    <p>
+        PNG: We used Gimp to make some fanart for the game. We used filters, frames, layers, transparency, and drew with a couple weird brushes and combined images.
+        The original images and gimp files can be found in folders Image1-3 and the final pngs are also in the fanart page.
+    </p>
+    <p>
+        SVG: We used Inkscape to recreate the symbols for the three factions of the game. We used the shape tool, simplification, path editing, grouping, transformations, and patterns.
+        Is there any advice you could give for how to reach A* on this?
+    </p>
+    <p>
+        Server: The server is built from the ground up using the JS HTTP library. Async-await has been used wherever possible including promisifying the database connection.
+        It acts as both a websocket client and server to communicate with the census API and client respectively.
+    </p>
+    <p>
+        
+        Since we can't include the database in the .zip, a schema is provided in schema.sql. The server assumes that the database is
+        called "webtech".
+    </p>
+    <p>
+        Dynamic pages: The server can generate dynamic HTML pages by use of a custom embedded templating language implemented in the module "templating.js".<br>
+        For full details please see <a href="templating.html">templating.html</a>
+    </p>
