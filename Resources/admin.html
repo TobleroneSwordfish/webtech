@@ -22,6 +22,24 @@ ${navbar}
         <th id = adminStatus> Admin </th>
         <th> Delete User</th>
     </tr></thead></table>
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+          <span class="close">&times;</span>
+          <form action="/delete-user" method="POST">
+            <label for="adminusername">Username</label>
+            <input type="text" id="adminusername" name="adminusername" placeholder="Username">
+        
+            <label for="adminpassword">Password</label>
+            <input type="text" id="adminpassword" name="adminpassword" placeholder="Password">
+        
+            <label for="username">User to delete</label>
+            <input type="text" id="usernameToDelete" name="usernameToDelete" placeholder="User to be removed">
+
+            <input type="submit" value="Submit" id="submitDeletion">
+          </form>
+        </div>
+      
+      </div>
 <br>
 <a href="javascript:previous();">&lt</a>
 Page: <span id="pageNumber">1</span>
@@ -96,13 +114,37 @@ ${fix_height_script}
             var row = table.insertRow(-1);
             for (var p in colnames){
                 var cell = row.insertCell(-1);
-                cell.innerHTML = obj[u][p];
+                if (p=="adminStatus"){
+                    if (obj[u][p]==0){
+                        cell.innerHTML="No";
+                    }
+                    else{
+                        cell.innerHTML="Yes";
+                    }
+                }
+                else{
+                    cell.innerHTML = obj[u][p];
+                }
             }
             var cell = row.insertCell(-1);
             var button = document. createElement("button");
+            button.id="delete"+obj[u]["username"];
+            button.href=="#popup";
             button. innerHTML = "Delete user";
+            cell.appendChild(button);
+            console.log(obj[u]["username"])
+            console.log(u)
+            button.addEventListener("click",() => enableModal(button.id.substr("delete".length)));
         }
     }
+
+    function enableModal(user) {
+        console.log(user)
+        document.getElementById("usernameToDelete").readonly=true;
+        document.getElementById("usernameToDelete").value=user;
+        modal.style.display = "block";
+    }
+
     document.getElementById("userCount").addEventListener("click",updateResultsPerPage);
 
     function updateResultsPerPage(){
@@ -112,5 +154,20 @@ ${fix_height_script}
         document.getElementById("pageNumber").innerHTML=start+1;
         fillTable(start,resultsPerPage);
     }
+
+var modal = document.getElementById("myModal");
+
+var span = document.getElementsByClassName("close")[0];
+
+span.onclick = function() {
+  modal.style.display = "none";
+}
+
+window.onclick = function(event) {
+  if (event.target == modal) {
+    modal.style.display = "none";
+  }
+}
+
 </script>
 </html>

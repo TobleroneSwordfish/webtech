@@ -30,8 +30,8 @@ exports.authenticateUser = async function(username, password) {
 exports.deleteUser = async function(adminUser, adminPass, usernameToDelete) {
     var allowed = await exports.authenticateUser(adminUser, adminPass)
     if (allowed) {
-        var q = "DELETE FROM users WHERE username = '" + usernameToDelete + "');";
-        await query(q);
+        var q = "DELETE FROM users WHERE username = ?;";
+        await query(q, [usernameToDelete]);
         return true;
     }
     return false;
