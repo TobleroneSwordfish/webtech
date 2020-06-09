@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" type="text/css" href="templating.css">
+<title>Custom templating language documentation</title>
+</head>
+<body>
+    <p>
+        In line with the "from the ground up" approach we have taken over the project we decided to build our own templating language.
+        It has simple yet powerful syntax that have been added to over the course of the project to suit our needs. All evaluation of
+        arguments is done using the Node VM module and so follow complete javascript syntax. The template function simply takes the page
+        content as a string and a JS object mapping template variable names to values (referred to as the template map).
+        <br>
+        There are a number of different statements in the language:
+    </p>
+    <ul>
+        <li>
+            <header>Direct replacement</header>
+            <p class="code">${expression}</p> <p>Where expression is a valid javascript expression in the environment of the template map.<br>
+                The statement is simply replaced with the value of expression.</p>
+        </li>
+        <li>
+            <header>Escape</header>
+            <p class="code">$escape{expression}</p>
+            <p>Evaluates expression the same as above but does not perform templating on the result.<br>
+                Used when the value of expression may contain special characters such as "$", "{" or "}".</p>
+        </li>
+        <li>
+            <header>If else</header>
+            <p class="code">$if(expression){
+    body
+}else{
+    else body
+}
+            </p> <p>The statement is replaced with body if expression evaluates to true or else body if it evaluates to false.<br>
+                The else case is optional.<br>
+                The body and else body may contain other templating statements that will be evaluated in turn.</p>
+        </li>
+        <li>
+            <header>Foreach</header>
+            <p class="code">$foreach(variable in iterable){
+    body
+}
+            </p>
+            <p>iterable should evaluate to some iterable array like structure.<br>
+            For each element in iterable, the body will be cloned and evaluated using a template map that includes the entry variable: element.<br>
+            For example
+            <div class="code">$foreach(number in [1,2,3]){
+    The number is ${number}
+}
+            </div> will result in: <br>
+            The number is 1<br>
+            The number is 2<br>
+            The number is 3<br>
+            The body may also contain any other templating statement including other foreach statements.</p>
+        </li>
+        <li>
+            <header>Declare</header>
+            <p class="code">$declare(name){
+    body
+}
+            </p><p>
+                Adds the entry name: body to the template map for the page and then removes the statement.<br>
+                This is used to implement recursive templating such as for the comments system on the fanart page.
+            </p>
+        </li>
+    </ul>
+
+    <header>An example of complex templating use from the fanart page</header>
+    <xmp>
+    $declare(comment_block){
+        <!-- block that is recursively copied for each comment -->
+        <div class="comment">
+            <div class="content">
+                <div class="id no-display">${comment.id}</div>
+                <div class="fanart_id no-display">${comment.fanart_id}</div>
+                <strong>${users[comment.user_id]}</strong>
+                <div class="comment-text">$escape{comment.content}</div>
+                $if(session.loggedin){
+                    <button class="reply-button hidden">Reply</button>
+                }
+            </div>
+            $foreach(comment in comment.children){
+                ${comment_block}
+            }
+        </div>
+        }
+
+        $foreach(img in images){
+        <div>
+            <div class="content">
+            <div class="fanart_id no-display">${img.id}</div>
+            Uploaded by: ${users[img.user_id]}
+            <img src="/fanart/${img.filename}"/>
+            $if(session.loggedin){
+                <button class="reply-button static-button">Comment</button>
+            }
+            $if(session.loggedin && session.admin){
+                <a class="approval-button" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
+            }
+            </div>
+            $foreach(comment in img.comments){
+                <div class="comment-chain">
+                    ${comment_block}
+                </div>
+            }
+        </div>
+        }
+    </xmp>
+</body>
+</html>

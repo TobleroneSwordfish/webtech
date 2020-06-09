@@ -17,6 +17,11 @@ const SecureWebSocket = require('wss');
 
 var properties = read_yaml();
 
+const formidableOptions = {
+  maxFileSize: 10 * 1024 * 1024,
+  maxFields: 50
+}
+
 var requestSessionHandler = sessions({
   cookieName: "session",
   secret: properties.cookie_secret || "there are no wolves on fenris",
@@ -169,7 +174,6 @@ function wss_connection(ws) {
 }
 
 function client_close(ws) {
-  console.log("Websocket closed");
   notification_clients = notification_clients.splice(notification_clients.indexOf(ws), 1);
 }
 
@@ -178,7 +182,17 @@ function send_notification(text) {
   notification.text = text;
   notification.timestamp = new Date();
   for (var ws in notification_clients) {
-    notification_clients[ws].send(JSON.stringify(notification));
+    try {
+      notification_clients[ws].send(JSON.stringify(notification));
+    }
+    catch (err) {
+      if (err.message == "not opened") {
+        client_close(ws);
+      }
+      else {
+        throw err;
+      }
+    }
   }
 }
 
@@ -274,8 +288,9 @@ async function startup() {
   auth.createUser("g", "hunter3");
   auth.createUser("h", "hunter3");
   auth.createUser("i", "hunter3");
-  var id = await post_comment(1, 1, "hai");
-  post_comment(1, 2, "oh hello there", id);
+  auth.createUser("σεφησδφκ", "hunter2");
+  // var id = await post_comment(1, 1, "hai");
+  // post_comment(1, 2, "oh hello there", id);
 }
 
 //subscribe to census API events
@@ -587,6 +602,9 @@ async function handle_get(request, response, params) {
     //console.log(content)
     reply(response, content, "text/plain");
   }
+  else {
+    send_page(pageMap["/errorpage"], request, response);
+  }
   log("");
 }
 
@@ -597,13 +615,13 @@ async function handle_post(request, response, params) {
     if (!request.session.loggedin) {
       return;
     }
-    var form = new formidable.IncomingForm();
+    var form = new formidable.IncomingForm(formidableOptions);
     form.parse(request, (err, fields, files) => parse_fanart(err, fields, files, request));
     await response.writeHead(204); //respond with "204: no content" to prevent the browser trying to load the page
     response.end();
   }
   else if (request.url.startsWith("/fanart/comment")) { //endpoint for posting comments on fanart
-    var form = formidable.IncomingForm();
+    var form = formidable.IncomingForm(formidableOptions);
     var userId = await get_user_id(request.session.username);
     form.parse(request, (err, fields, files) => {
       if (err) throw err;
@@ -623,7 +641,7 @@ async function handle_post(request, response, params) {
     redirect(response, "/");
   }
   else if (url == "/login") {
-    var form = new formidable.IncomingForm();
+    var form = new formidable.IncomingForm(formidableOptions);
     form.parse(request,
       async function(err, fields, files) {
         if (err) throw err;
@@ -641,7 +659,7 @@ async function handle_post(request, response, params) {
       });
   }
   else if (url == "/delete-user") {
-    var form = new formidable.IncomingForm();
+    var form = new formidable.IncomingForm(formidableOptions);
     form.parse(request, (err, fields, files) => auth.deleteUser(fields.adminUser, fields.adminPass, fields.usernameToDelete));
   }
 }
@@ -649,9 +667,27 @@ async function handle_post(request, response, params) {
 async function parse_fanart(err, fields, files, request) {
   if (err) throw err;
   log("Files uploaded " + JSON.stringify(files));
-  await fs.rename(files.filename.path, __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
-  loadArt(files.filename.name);
-  storeArt(files.filename.name, false, await get_user_id(request.session.username));
+  var mimetype = mime.contentType(files.filename.name);
+  if (["image/jpeg", "image/png", "image/bmp"].indexOf(mimetype) != -1) {
+    
+    await fs.rename(files.filename.path, __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
+    loadArt(files.filename.name);
+    storeArt(files.filename.name, false, await get_user_id(request.session.username));
+  }
+  else {
+    await fs.unlink(files.filename.path);
+  }
+}
+
+function make_valid_filename(filename) {
+  var regex = /[0-9]|[A-Z]|[a-z]|\.|\_|\-|/;
+  filename = filename.split("").filter((char) => regex.test(char)).join("");
+  // if (filename.substring(0,filename.lastIndexOf(".")) == "") {
+  //   //credit for this monstrosity goes to some madlad on stackoverflow: https://stackoverflow.com/a/8084248
+  //   //basically it converts a random float to base 36 to make it alphanumeric
+  //   filename = Math.random().toString(36).slice(2,5) + filename.split(".").pop();
+  // }
+  return filename;
 }
 
 async function get_user_id(username) {

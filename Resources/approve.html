@@ -8,6 +8,7 @@
 </head>
 <body>
 ${navbar}
+<div class="dark">
 $foreach(img in images){
 <div>
     <img src="/fanart/unapproved/${img.filename}"/>
@@ -15,6 +16,8 @@ $foreach(img in images){
     <a class="approval-button text" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
 </div>
 }
+</div>
+${tidy_logo}
 ${fix_height_script}
 </body>
 </html>

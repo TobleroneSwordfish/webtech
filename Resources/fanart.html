@@ -5,8 +5,10 @@ $declare(comment_block){
       <div class="id no-display">${comment.id}</div>
       <div class="fanart_id no-display">${comment.fanart_id}</div>
       <strong>${users[comment.user_id]}</strong>
-      <div class="comment-text">${comment.content}</div>
-      <button class="reply-button hidden">Reply</button>
+      <div class="comment-text">$escape{comment.content}</div>
+      $if(session.loggedin){
+        <button class="reply-button hidden">Reply</button>
+      }
     </div>
     $foreach(comment in comment.children){
       ${comment_block}
@@ -21,20 +23,14 @@ $declare(comment_block){
 <link rel="stylesheet" type="text/css" href="style.css">
 <link rel="stylesheet" type="text/css" href="fanart.css">
 <meta charset="UTF-8"/>
-<title>we need a title</title>
+<title>Planetside 2 stats</title>
 </head>
 
 <body>
 ${navbar}
-<div class="dark">
-<div class = "top text">
+<div id="page-container">
+<div class="dark text">
 
-$if(session.loggedin){
-<form action="fanart" method="post" enctype="multipart/form-data">
-    <input type="file" id="myFile" name="filename">
-    <input type="submit">
-</form>
-}
 $foreach(img in images){
 <div>
   <div class="content">
@@ -57,7 +53,28 @@ $foreach(img in images){
 }
 
 </div>
+
+$if(session.loggedin){
+<div class="text" id="upload-box">
+  Upload fanart here
+    <form id="fanart-upload" action="fanart" method="post" enctype="multipart/form-data">
+        <input type="file" id="myFile" name="filename">
+        <!-- <input type="submit"> -->
+    </form>
 </div>
+}
+</div>
+
+<script>
+  "use strict"
+  document.querySelector("#fanart-upload #myFile").addEventListener("change", upload);
+  function upload() {
+    if (this.value != "") {
+      this.parentElement.submit();
+      this.value="";
+    }
+  }
+</script>
 
 <!-- script to make the reply box appear when you click the reply button -->
 <script>
@@ -103,12 +120,12 @@ $foreach(img in images){
 <form id="form-prototype" class="comment-form" action="/fanart/comment" method="post">
   <input type="hidden" name="parent_id" class="parent_id">
   <input type="hidden" name="fanart_id" class="fanart_id">
-  <textarea name="content" rows="6">
-  </textarea>
+  <textarea name="content" rows="6"></textarea>
   <br>
   <button type="submit">Submit</button>
   <button class="cancel-reply" type="button">Cancel</button>
 </form>
+${tidy_logo}
 ${fix_height_script}
 </body>
 </html>
