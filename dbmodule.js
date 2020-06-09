@@ -45,7 +45,7 @@ async function DELETE(table,colnames,values, connectives){
             q+=";"
         }
     }
-    console.log(q)
+    // console.log(q)
     await query(q, values);
 }
 
@@ -118,7 +118,7 @@ async function SELECT(table, colnames, as, where, connectives, order,limit,lasti
         }
     }
     q+=";";
-    console.log(q)
+    // console.log(q)
     var result = await query(q,args);
     return result;
 }
