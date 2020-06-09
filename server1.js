@@ -337,8 +337,8 @@ function sql_timestamp(date) {
 async function handle_login(payload) {
   await create_if_new(payload.character_id);
   dbmodule.UPDATE("characters",["last_login","id"],[sql_timestamp(new Date()), Number(payload.character_id)]);
-  // var sql = "UPDATE characters SET last_login = ? WHERE id = ?;";
-  // query(sql, [sql_timestamp(new Date()), Number(payload.character_id)]);
+  var character = await get_character_data(payload.character_id, "name")
+  send_notification(character.name.first + " has logged in");
 }
 
 async function handle_death(payload) {
