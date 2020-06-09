@@ -11,7 +11,7 @@ ${navbar}
 <div class="dark">
 $foreach(img in images){
 <div>
-    <img src="/fanart/unapproved/${img.filename}"/>
+    <img class="fanart-img" src="/fanart/unapproved/${img.filename}"/>
     <a class="approval-button text" href="/fanart/approve?img=${img.filename}">Approve this piece</a>
     <a class="approval-button text" href="/fanart/delet?img=${img.filename}">Delete this piece</a>
 </div>

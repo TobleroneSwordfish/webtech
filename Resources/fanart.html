@@ -36,7 +36,7 @@ $foreach(img in images){
   <div class="content">
     <div class="fanart_id no-display">${img.id}</div>
     Uploaded by: ${users[img.user_id]}
-    <img src="/fanart/${img.filename}"/>
+    <img class="fanart-img" src="/fanart/${img.filename}"/>
     $if(session.loggedin){
       <button class="reply-button static-button">Comment</button>
     }
@@ -61,6 +61,9 @@ $if(session.loggedin){
         <input type="file" id="myFile" name="filename">
         <!-- <input type="submit"> -->
     </form>
+    $if(session.admin){
+      <a href="/approve">Click here to review unapproved fanart</a>
+    }
 </div>
 }
 </div>
@@ -93,7 +96,10 @@ $if(session.loggedin){
     clone.getElementsByClassName("fanart_id")[0].value = this.parentElement.getElementsByClassName("fanart_id")[0].innerHTML;
     this.parentElement.appendChild(clone);
     this.classList.toggle("hidden");
-    clone.getElementsByClassName("parent_id")[0].value = this.parentElement.getElementsByClassName("id")[0].innerHTML;
+    var parent_id_element = this.parentElement.getElementsByClassName("id")[0];
+    if (parent_id_element) {
+      clone.getElementsByClassName("parent_id")[0].value = parent_id_element.innerHTML;
+    }
   }
 
   function closeReplyForm() {
@@ -111,10 +117,16 @@ $if(session.loggedin){
     comments[i].addEventListener("mouseleave", hideReply);
   }
   function revealReply() {
-    this.parentElement.querySelector(".reply-button:not(.static-button)").classList.remove("hidden");
+    var button = this.parentElement.querySelector(".reply-button:not(.static-button)");
+    if (button) {
+      button.classList.remove("hidden");
+    }
   }
   function hideReply() {
-    this.parentElement.querySelector(".reply-button:not(.static-button)").classList.add("hidden");
+    var button = this.parentElement.querySelector(".reply-button:not(.static-button)");
+    if (button) {
+      button.classList.add("hidden");
+    }
   }
 </script>
 }

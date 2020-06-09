@@ -19,7 +19,8 @@ var properties = read_yaml();
 
 const formidableOptions = {
   maxFileSize: 10 * 1024 * 1024,
-  maxFields: 50
+  maxFields: 50,
+  uploadDir: __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep
 }
 
 var requestSessionHandler = sessions({
@@ -671,10 +672,10 @@ async function parse_fanart(err, fields, files, request) {
   log("Files uploaded " + JSON.stringify(files));
   var mimetype = mime.contentType(files.filename.name);
   if (["image/jpeg", "image/png", "image/bmp"].indexOf(mimetype) != -1) {
-    
-    await fs.rename(files.filename.path, __dirname + path.sep + "Resources" + path.sep + "Fanart" + path.sep + files.filename.name, (err) => {if (err) throw err;});
-    loadArt(files.filename.name);
-    storeArt(files.filename.name, false, await get_user_id(request.session.username));
+    var filename = files.filename.path + "." + files.filename.name.split(".").pop();
+    await fs.rename(files.filename.path, filename, (err) => {if (err) throw err;});
+    loadArt(filename);
+    storeArt(filename, false, await get_user_id(request.session.username));
   }
   else {
     await fs.unlink(files.filename.path);
