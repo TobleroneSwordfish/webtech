@@ -26,8 +26,7 @@ async function INSERT(table,colnames,values,ignore){
     vs=vs.slice(0,-1)
     vs+=");"
     q+=") VALUES ";
-    q+=vs
-    // console.log(q)
+    q+=vs;
     await query(q, values);
 }
 
@@ -45,7 +44,6 @@ async function DELETE(table,colnames,values, connectives){
             q+=";"
         }
     }
-    console.log(q)
     await query(q, values);
 }
 
@@ -87,23 +85,18 @@ async function SELECT(table, colnames, as, where, connectives, order,limit,lasti
         q+=table;
         var args=[];
         if (where.length!=0){
+            q+=" WHERE ";
             for (var i=0;i<where.length;i++){
-                q+=" WHERE ";
                 q+=where[i][0];
-                if (where[i][1]!="NULL"){
-                    args.push(where[i][1]);
-                    if (where[i][1].length>1){
-                        q+= " in (?)";
-                    }
-                    else{
-                        q+=" = ?";
-                    }
-                    if (i<where.length-1){
-                        q+=" "+connectives[i]+" "
-                    }
+                args.push(where[i][1]);
+                if (where[i][1]!=null && where[i][1].length>1){
+                    q+= " in (?)";
                 }
                 else{
-                    q+=" IS NULL";
+                    q+=" = ?";
+                }
+                if (i<where.length-1){
+                    q+=" "+connectives[i]+" ";
                 }
             }
         }
@@ -118,7 +111,6 @@ async function SELECT(table, colnames, as, where, connectives, order,limit,lasti
         }
     }
     q+=";";
-    console.log(q)
     var result = await query(q,args);
     return result;
 }

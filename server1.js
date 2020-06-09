@@ -410,10 +410,6 @@ async function handle_revive(payload) {
   // sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
   // query(sql, [Number(payload.other_id)]);
   send_notification("A player has been revived");
-  var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = ?;";
-  query(sql, [Number(payload.character_id)]);
-  sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
-  query(sql, [Number(payload.other_id)]);
   var victimName =  await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.other_id)]],[], [],0,false);
   // var getName = "SELECT username FROM characters WHERE id = ?;";
   // var victimName = await query(getName, [Number(payload.other_id)]);
@@ -550,7 +546,7 @@ async function handle_get(request, response, params) {
   // }
   else if (request.url.startsWith("/admin/")) {
     if (request.session.admin) {
-      var result =  await dbmodule.SELECT("users",["username","admin"],["admin","adminStatus"],[[]],["username","ASC"], [],0,false);
+      var result =  await dbmodule.SELECT("users",["username","admin"],["admin","adminStatus"],[],["username","ASC"], [],0,false);
       // var sql = "SELECT username, admin AS adminStatus FROM users ORDER BY username ASC;";
       // var result = await query(sql);
       var content = JSON.stringify(result);
@@ -783,7 +779,7 @@ async function post_comment(fanart_id, user_id, content, parent_id) {
   else {
     await dbmodule.INSERT("comments",['fanart_id', 'user_id', 'content'],[fanart_id, user_id, content]);
   }
-  var result = await dbmodule.SELECT(0,[],[],[[]],[], [],0,true);
+  var result = await dbmodule.SELECT(0,[],[],[],[], [],0,true);
   // var q = "SELECT LAST_INSERT_ID();"
   // var result = await query(q);
   return result[0]["LAST_INSERT_ID()"];
@@ -811,7 +807,7 @@ async function send_page(filePath, request, response) {
       img.comments = topLevels;
     }
     templateMap.images = images;
-    var result = await dbmodule.SELECT("users",["username","id"],[],[[]],[], [],0,false);
+    var result = await dbmodule.SELECT("users",["username","id"],[],[],[], [],0,false);
     // var q = "SELECT username, id FROM users;";
     // var result = await query(q);
     var userMap = {};
