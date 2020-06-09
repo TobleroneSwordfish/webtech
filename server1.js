@@ -242,43 +242,12 @@ function sleep(ms) {
 }
 
 async function try_fetch(url) {
-  if (url == "http://www.station.sony.com/services/en/sorry.htm") {
-    console.log("Redirect to old SOE website, ignoring");
-    return;
-  }
   try {
     var resp = await fetch(url);
     return resp;
   }
   catch (err) {
-    if (err.type == "system") {
-      throw err;
-    }
-    else if (error.name == "AbortError") {
-      return;
-    }
-    else if (error.name == "FetchError")
-      // if (err.code == "ECONNRESET") {
-      //   await sleep(200);
-      //   try {
-      //     var resp = await fetch(url);
-      //     return resp;
-      //   }
-      //   catch (err) {
-      //     return;
-      //   }
-      // }
-      //for some ungodly reason, occasionally the census API tries to send us to an error page on the
-      //old SOE site (company that used to run Planetside 2, now non-existent)
-      //we're handling it here by simply complaining about it and moving on, as the loss of one request isn't too important
-      // else if (err.message == "request to http://www.station.sony.com/services/en/sorry.htm failed, reason: getaddrinfo EAI_AGAIN www.station.sony.com") {
-      //   console.log("Census API tried to redirect us to the old SOE site, request ignored.");
-      //   return;
-      // }
-      // else {
-        console.log("Fetch error: " + err.message);
-        // throw err;
-      // }
+    console.log("Fetch error: " + err.message);
   }
 }
 
