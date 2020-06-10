@@ -148,28 +148,6 @@ ${navbar}
     }
   }
 
-  $if(!session.loggedin){
-    document.body.addEventListener("click",toggleOffPopup,false);
-
-    function toggleOffPopup() {
-      var popup=document.getElementById('loginPopupText');
-        if (popup.classList.contains("show")){
-          popup.classList.toggle("show");
-        }
-    }
-
-    document.getElementById("loginPopup").addEventListener("click",togglePopup);
-    function togglePopup() {
-      var popup = document.getElementById("loginPopupText");
-      popup.classList.toggle("show");
-    }
-    document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
-    function stopPropagation(ev) {
-      console.log("called stoppropagation")
-      ev.stopPropagation();
-    }
-  }
-
   document.getElementById("searchRequest").addEventListener("click", searchForPlayer);
 
   function searchForPlayer(){
