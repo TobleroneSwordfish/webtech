@@ -466,7 +466,7 @@ ul.admin-navbar li a:hover {
 .popup {
     position: relative;
     display: inline-block;
-    cursor: default;
+    cursor: pointer;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;

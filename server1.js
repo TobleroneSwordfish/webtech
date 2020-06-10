@@ -248,6 +248,7 @@ async function try_fetch(url) {
   }
   catch (err) {
     console.log("Fetch error: " + err.message);
+    return resp;
   }
 }
 
@@ -380,7 +381,7 @@ async function handle_revive(payload) {
   // sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
   // query(sql, [Number(payload.other_id)]);
   // send_notification("A player has been revived");
-  var victimName =  await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.other_id)]],[], [],0,false);
+  var victimName = await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.other_id)]],[], [],0,false);
   // var getName = "SELECT username FROM characters WHERE id = ?;";
   // var victimName = await query(getName, [Number(payload.other_id)]);
   send_notification(victimName[0].username + " has been revived");
