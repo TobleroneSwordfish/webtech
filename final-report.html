@@ -3,10 +3,10 @@
     <li>A for CSS</li>
     <li>A+ for JS</li>
     <li>A for PNG</li>
-    <li>A for SVG</li>
-    <li>B for Server</li>
-    <li>B for Database</li>
-    <li>B for Dynamic pages</li>
+    <li>A+ for SVG</li>
+    <li>A for Server</li>
+    <li>A for Database</li>
+    <li>A for Dynamic pages</li>
     </ul>
     The project is a website a fan page for the game Planetside 2. Conveniently the game has an API located at http://census.daybreakgames.com/
     The server gets information from the API, stores it in a database and relays it to the client, as well as receiving data from clients (such as pictures).
@@ -27,6 +27,7 @@
         JS: We are using client side JS to fetch data from the server at runtime and display it on the page as well as establishing a websocket connection with the
         server to receive notifications. We also use it to dynamically change styling of html elements, and generate tables from the received data including splitting it into pages. 
         Eg: clicking on a table column requests data from the server sorted by that column name and sets the styling of that column to be dark to indicate it has been selected.
+        Also, typing a username in the search bar and pressing enter or clicking the search button will bring up the player by that name if they are in the database. And empty search or clicking the refresh button will refresh the table with the parameters in the input fields.
         Js also supports the CSS animation on the index page's SVG logos.
     </p>
     <p>
@@ -35,7 +36,8 @@
     </p>
     <p>
         SVG: We used Inkscape to recreate the symbols for the three factions of the game. We used the shape tool, simplification, path editing, grouping, transformations, and patterns.
-        Is there any advice you could give for how to reach A* on this?
+        We then also created a set of three hexagons with gradients in the faction colors and used the tiling tool to tessalate it, export it as a png, and use it as the website's background.
+        We are claiming A+ for this because we feel the SVGs are at a level where they could be in a professional website. 
     </p>
     <p>
         Server: The server is built from the ground up using the JS HTTP library. Async-await has been used wherever possible including promisifying the database connection.
