@@ -31,8 +31,20 @@ var requestSessionHandler = sessions({
   activeDuration: 1000 * 60 * 5
 });
 
-//database connection, global because passing it around seems pointless
-var con;
+var query;
+async function setup_database(properties) {
+  query = await dbmodule.connect_db(properties.db_host, properties.db_user, properties.db_password);
+  auth.setQueryMethod(query);
+}
+setup_database(properties);
+
+var loggingLevel = 0;
+
+function log(text) {
+  if (loggingLevel) {
+    console.log(text);
+  }
+}
 
 //daybreak API ID
 var serviceID = properties.census_id;
@@ -46,12 +58,7 @@ var notification_clients = [];
 
 //start the HTTP server
 start_server(properties.http_port, properties.server_ip);
-//connect to the mySQL server using the credentials from the properties file
-connect_db(properties);
-//set up promisified version of the query method so we can await it
-const query = util.promisify(con.query).bind(con);
-auth.setQueryMethod(query);
-dbmodule.setQueryMethod(query);
+
 startup();
 //subscribe to the exp gained events from the API
 request_events();
@@ -61,7 +68,6 @@ var pageMap = {
   "/navbar":"navbar.html",
   "/favicon.ico":"favicon.ico", //we have to serve this locally because deybreak's cdn is weird
   "/fanart":"fanart.html",
-  // "/login":"login.html",
   "/test":"test.txt",
   "/errorpage":"errorpage.html",
   "/errorpage.css":"errorpage.css",
@@ -126,8 +132,6 @@ function approveArt(filename, approve) {
     approve = true;
   }
   dbmodule.UPDATE("fanart",["approved","filename"],[approve, filename]);
-  // var q = "UPDATE fanart SET approved=? WHERE filename=?;";
-  // query(q, [approve, filename]);
   loadArt(filename, true);
 }
 function unapproveArt(filename) {
@@ -135,8 +139,6 @@ function unapproveArt(filename) {
 }
 async function deleteArt(filename) {
   var resp = await dbmodule.SELECT("fanart",["id"],[],[["filename",filename]],[], [],0,false);
-  // var q = "SELECT id FROM fanart WHERE filename = ?;";
-  // var resp = await query(q, [filename]);
   if (resp.length > 0) {
     try {
       await fs.unlinkSync(__dirname + "/Resources/Fanart/" + resp[0].filename);
@@ -144,18 +146,14 @@ async function deleteArt(filename) {
       console.log("Unable to delete art: " + error);
     }
     await dbmodule.DELETE("comments", ["fanart_id"],[resp[0].id] );
-    // var q = "DELETE FROM comments WHERE fanart_id = ?;";
-    // await query(q, [resp[0].id]);
     await dbmodule.DELETE("fanart", ["filename"],[filename] );
-    // q = "DELETE FROM fanart WHERE filename = ?;";
-    // await query(q, [filename]);
   }
 }
 
 
 function start_server(port, ip) {
   var server;
-  if (properties.ssl_enabled) {
+  if (properties.ssl_enabled) { //start an HTTPS server and secure websocket server to go along with it
     const options = {
       key: fs.readFileSync(properties.ssl_key_path),
       cert: fs.readFileSync(properties.ssl_cert_path)
@@ -164,14 +162,12 @@ function start_server(port, ip) {
     server.listen(properties.https_port, ip);
     wss = SecureWebSocket.createServerFrom(server, wss_connection);
   }
-  else {
+  else { //start an HTTP server and normal websocket server to go along with it
     server = HTTP.createServer(handle);
     server.listen(properties.http_port, ip);
     wss = new WebSocket.Server({server});
     wss.on("connection", wss_connection);
   }
-  // console.log(wss);
-  
 }
 
 function wss_connection(ws) {
@@ -183,6 +179,7 @@ function client_close(ws) {
   notification_clients = notification_clients.splice(notification_clients.indexOf(ws), 1);
 }
 
+//sends a notification out to every client to appear on the index page
 function send_notification(text) {
   var notification = {};
   notification.text = text;
@@ -202,13 +199,7 @@ function send_notification(text) {
   }
 }
 
-var loggingLevel = 0;
 
-function log(text) {
-  if (loggingLevel) {
-    console.log(text);
-  }
-}
 
 function read_yaml() {
   try {
@@ -217,22 +208,6 @@ function read_yaml() {
     console.log(e);
   }
   return doc
-}
-
-function connect_db(doc){
-  con = mysql.createConnection({
-    host: doc.db_host,
-    user: doc.db_user,
-    password: doc.db_password
-  });
-  con.connect(function(err) {
-    if (err) throw err;
-    console.log("Connected!");
-  });
-  var sel = "USE webtech;";
-  con.query(sel, function (err, result) {
-    if (err) throw err;
-  })
 }
 
 function sleep(ms) {
@@ -266,8 +241,6 @@ async function startup() {
   auth.createUser("h", "hunter3");
   auth.createUser("i", "hunter3");
   auth.createUser("σεφησδφκ", "hunter2");
-  // var id = await post_comment(1, 1, "hai");
-  // post_comment(1, 2, "oh hello there", id);
 }
 
 //subscribe to census API events
@@ -304,8 +277,6 @@ async function handle_event_response(event) {
         else if (payload.experience_id == 4 || payload.experience_id == 5 || payload.experience_id == 51) {
           await create_if_new(payload.character_id);
           await dbmodule.UPDATE("characters",["healing_ticks","id"],[Number(payload.character_id)]);
-          // var sql = "UPDATE characters SET healing_ticks = IFNULL(healing_ticks, 0) + 1 WHERE id = ?;";
-          // await query(sql, [Number(payload.character_id)]);
         }
         else {
           return;
@@ -347,8 +318,6 @@ async function handle_death(payload) {
   if (payload.character_id == payload.attacker_character_id) {
     await create_if_new(payload.attacker_character_id);
     dbmodule.UPDATE("characters",["suicides","id"],[Number(payload.character_id)]);
-    // var suicide = "UPDATE characters SET suicides = IFNULL(suicides, 0) + 1 WHERE id = ?;";
-    // query(suicide, [Number(payload.character_id)]);
     return;
   }
   var victim = await get_character_data(payload.character_id, "faction_id");
@@ -361,11 +330,7 @@ async function handle_death(payload) {
   if (victim.faction_id == attacker.faction_id) {
     await create_if_new(payload.attacker_character_id);
     dbmodule.UPDATE("characters",["teamkills","id"],[Number(payload.attacker_character_id)]);
-    // var updateCount = "UPDATE characters SET teamkills = IFNULL(teamkills, 0) + 1 WHERE id = ?;";
-    // query(updateCount, [Number(payload.attacker_character_id)]);
     await dbmodule.DELETE("teamkills", ["victim_id"],[Number(payload.character_id)] );
-    // var clearTKs = "DELETE FROM teamkills WHERE victim_id = ?;";
-    // await query(clearTKs, [Number(payload.character_id)]);
     await dbmodule.INSERT("teamkills",["victim_id", "attacker_id"],[Number(payload.character_id), Number(payload.attacker_character_id)]);
   }
 }
@@ -375,28 +340,16 @@ async function handle_revive(payload) {
   await create_if_new(payload.other_id);
   //actually increase the resurrections count
   dbmodule.UPDATE("characters",["resurrections","id"],[Number(payload.character_id)]);
-  // var sql = "UPDATE characters SET resurrections = IFNULL(resurrections, 0) + 1 WHERE id = ?;";
-  // query(sql, [Number(payload.character_id)]);
   dbmodule.UPDATE("characters",["times_revived","id"],[Number(payload.other_id)]);
-  // sql = "UPDATE characters SET times_revived = IFNULL(times_revived, 0) + 1 WHERE id = ?;";
-  // query(sql, [Number(payload.other_id)]);
-  // send_notification("A player has been revived");
   var victimName = await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.other_id)]],[], [],0,false);
-  // var getName = "SELECT username FROM characters WHERE id = ?;";
-  // var victimName = await query(getName, [Number(payload.other_id)]);
   send_notification(victimName[0].username + " has been revived");
   //check if this is a forgiveness revive
   var result =  await dbmodule.SELECT("teamkills",["id"],[],[["victim_id",Number(payload.other_id)],["attacker_id",Number(payload.character_id)]],["AND"], [],0,false);
-  // var getTKs = "SELECT id FROM teamkills WHERE victim_id=? AND attacker_id=?;";
-  // var result = await query(getTKs, [Number(payload.other_id), Number(payload.character_id)]);
   if (result.length > 0) {
     var attackerName =  await dbmodule.SELECT("characters",["username"],[],[["id",Number(payload.character_id)]],[], [],0,false);
-    // var attackerName = await query(getName, [Number(payload.character_id)]);
     var text = attackerName[0].username + " just revived " + victimName[0].username + " after teamkilling them, perhaps all is forgiven now.";
     send_notification(text);
     dbmodule.DELETE("teamkills", ["victim_id", "attacker_id"],[Number(payload.other_id), Number(payload.character_id)], ["AND"] );
-    // var forgive = "DELETE FROM teamkills WHERE victim_id=? AND attacker_id=?;";
-    // query(forgive, [Number(payload.other_id), Number(payload.character_id)]);
   }
 }
 
@@ -418,7 +371,11 @@ async function get_character_data(id, ...properties) {
   }
   var requestString = "http://census.daybreakgames.com/"+ serviceID +"/get/ps2:v2/character/?character_id=" + id + params;
   var result = await try_fetch(requestString);
-  if (result.status != 200) {
+  if (!result) {
+    console.log("No response from API");
+    return;
+  }
+  else if (result.status != 200) {
     console.log("API returned invalid response code " + result.status);
     return;
   }
@@ -433,7 +390,7 @@ async function create_character(id){
   //request username and faction id from the api
   var character = await get_character_data(id, "name", "faction_id");
   if (!character) {
-    //console.log("character does not exist")
+    console.log("Deybreak refuse to give us data on character id " + id + " perhaps a new character or the API borked");
   }
   else {
     await dbmodule.INSERT("characters",['id', 'username', 'faction_id'],[Number(id), character.name.first, character.faction_id],true);
@@ -442,15 +399,10 @@ async function create_character(id){
 
 async function delete_character(id) {
   await dbmodule.DELETE("characters", ["id"],[Number(id)]);
-  // var deletChar = "DELETE FROM characters WHERE id = ?;";
   await dbmodule.DELETE("teamkills", ["victim_id", "attacker_id"],[Number(id), Number(id)], ["OR"] );
-  // var deletTKs = "DELETE FROM teamkills WHERE victim_id = ? OR attacker_id = ?;";
-  // query(deletChar, [Number(id)]);
-  // query(deletTKs, [Number(id), Number(id)]);
 }
 async function character_exists(id) {
   var results =  await dbmodule.SELECT("characters",["id"],[],[["id",Number(id)]],[], [],0,false);
-  // var results = await query("SELECT id FROM characters WHERE id =?;", [Number(id)]);
   return results.length > 0;
 }
 
@@ -469,7 +421,6 @@ function handle(request, response) {
   });
 
   var params = parse_parameters(request.url);
-  // console.log(params)
   log("Method:", request.method);
   log("URL:", request.url);
   log("Params: ", params)
@@ -512,25 +463,18 @@ async function handle_get(request, response, params) {
       send_file(file, response, type);
     }
   }
-  // else if (request.url.startsWith("/notifications")) {
-  //   reply(response, JSON.stringify(notifications), "text/json");
-  // }
   else if (request.url.startsWith("/admin/")) {
     if (request.session.admin) {
       var result =  await dbmodule.SELECT("users",["username","admin"],["admin","adminStatus"],[],["username","ASC"], [],0,false);
-      // var sql = "SELECT username, admin AS adminStatus FROM users ORDER BY username ASC;";
-      // var result = await query(sql);
       var content = JSON.stringify(result);
       reply(response, content, "text/plain");
     }
-    //add an else go to error page
   }
   else if (request.url.startsWith("/api/")) {
     var name = request.url.substring(5).split("?")[0];
     if (name==""){
       name = "resurrections"
     }
-    // console.log(name)
     if (columns.includes(name)){
       if (params.count) {
         var count = params.count;
@@ -546,10 +490,6 @@ async function handle_get(request, response, params) {
       }
       var iord = "DESC";
       var result=await dbmodule.SELECT("characters",["username", "resurrections","suicides","teamkills","times_revived","faction_id"],[],[["faction_id",factions]],[], [name,iord],count,false);
-      // var sql = "SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters WHERE faction_id in (?) ORDER BY " + name + " "+ iord +" LIMIT " + count +";";
-      // var result = await query(sql,[factions]);
-      // console.log("AAA")
-      // console.log(result)
       var jsonObject = {};
       result.forEach(function (value, index, array) {
         var obj = {};
@@ -558,9 +498,7 @@ async function handle_get(request, response, params) {
         }
         jsonObject[index] = obj;
       });
-      //console.log(jsonObject);
       var content = JSON.stringify(jsonObject);
-      //console.log(content)
       reply(response, content, "text/plain");
     }
   }
@@ -579,8 +517,6 @@ async function handle_get(request, response, params) {
   else if (request.url.startsWith("/search")){
     var username=request.url.substring(8);
     var result = await dbmodule.SELECT("characters",["username", "resurrections","suicides","teamkills","times_revived","faction_id"],[],[["username",username]],[], [],1,false);
-    // var sql = 'SELECT username, resurrections, suicides, teamkills, times_revived,faction_id FROM characters WHERE username="' + username + '" LIMIT 1;';
-    // var result = await query(sql);
     var jsonObject = {};
     result.forEach(function (value, index, array) {
       var obj = {};
@@ -637,7 +573,6 @@ async function handle_post(request, response, params) {
     form.parse(request,
       async function(err, fields, files) {
         if (err) throw err;
-        console.log(fields);
         var authResult = await auth.authenticateUser(fields.username, fields.password);
         if (authResult) {
           request.session.loggedin = true;
@@ -668,19 +603,8 @@ async function parse_fanart(err, fields, files, request) {
     storeArt(filename, false, await get_user_id(request.session.username));
   }
   else {
-    await fs.unlink(files.filename.path);
+    await fs.unlink(files.filename.path, (err) => {if (err) throw err;});
   }
-}
-
-function make_valid_filename(filename) {
-  var regex = /[0-9]|[A-Z]|[a-z]|\.|\_|\-|/;
-  filename = filename.split("").filter((char) => regex.test(char)).join("");
-  // if (filename.substring(0,filename.lastIndexOf(".")) == "") {
-  //   //credit for this monstrosity goes to some madlad on stackoverflow: https://stackoverflow.com/a/8084248
-  //   //basically it converts a random float to base 36 to make it alphanumeric
-  //   filename = Math.random().toString(36).slice(2,5) + filename.split(".").pop();
-  // }
-  return filename;
 }
 
 async function get_user_id(username) {
@@ -701,38 +625,27 @@ async function reload(request, response) {
 
 //returns a dict mapping parameter names to values
 function parse_parameters(url){
-  // console.log(url)
   var dict = {};
   if (url.includes("?")){
     var temp = url.split("?").pop();
-    // console.log(temp)
-    let params = temp.split("&");  
-    // console.log(params)
+    let params = temp.split("&");
     for (var i in params){
       var p = params[i];
-      // console.log(typeof(p));
       var name = p.substring(0,p.indexOf("="));
       var value = p.substring(p.indexOf("=")+1, p.length);
       dict[name] = value;
     }
   }
-  // console.log(dict)
   return dict;
 }
 
 async function getFanart(approved) {
   var result = await dbmodule.SELECT("fanart",["id", "filename","user_id"],[],[["approved",approved]],[], [],0,false);
-  // var q = "SELECT id, filename, user_id FROM fanart WHERE approved;"
-  var result = await dbmodule.SELECT("fanart",["id", "filename","user_id"],[],[["approved",approved]],[], [],0,false);
-  // var q = "SELECT id, filename, user_id FROM fanart WHERE NOT approved;"
-  // var result = await query(q);
-  return result; //convert the SQL results into a simple array
+  return result;
 }
 
 async function getCommentChildren(comment) {
   var children = await dbmodule.SELECT("comments",["*"],[],[["parent_id",comment.id]],[], [],0,false);
-  // var q = "SELECT * FROM comments WHERE parent_id = ?;";
-  // var children = await query(q, [comment.id]);
   if (children.length > 0) {
     for (let child of children) {
       child.children = await getCommentChildren(child);
@@ -751,8 +664,6 @@ async function post_comment(fanart_id, user_id, content, parent_id) {
     await dbmodule.INSERT("comments",['fanart_id', 'user_id', 'content'],[fanart_id, user_id, content]);
   }
   var result = await dbmodule.SELECT(0,[],[],[],[], [],0,true);
-  // var q = "SELECT LAST_INSERT_ID();"
-  // var result = await query(q);
   return result[0]["LAST_INSERT_ID()"];
 }
 
@@ -770,8 +681,6 @@ async function send_page(filePath, request, response) {
     var images = await getFanart(true);
     for (let img of images) {
       var topLevels = await dbmodule.SELECT("comments",["*"],[],[["fanart_id",img.id],["parent_id","NULL"]],["AND"], [],0,false);
-      // var q = "SELECT * FROM comments WHERE fanart_id = ? AND parent_id IS NULL;";
-      // var topLevels = await query(q, [img.id]);
       for (let comment of topLevels) {
         comment.children = await getCommentChildren(comment);
       }
@@ -779,8 +688,6 @@ async function send_page(filePath, request, response) {
     }
     templateMap.images = images;
     var result = await dbmodule.SELECT("users",["username","id"],[],[],[], [],0,false);
-    // var q = "SELECT username, id FROM users;";
-    // var result = await query(q);
     var userMap = {};
     for (var user of result) {
       userMap[user.id] = user.username;
@@ -791,7 +698,6 @@ async function send_page(filePath, request, response) {
     templateMap["images"] = await getFanart(false);
   }
   content = templating.template(content, templateMap);
-  // console.log("Content: " + content);
   reply(response, content, 'text/html');
 }
 

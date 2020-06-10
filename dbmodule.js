@@ -3,7 +3,26 @@ let util = require('util');
 "use strict"
 
 var query;
-exports.setQueryMethod = method => query = method;
+var con;
+// exports.setQueryMethod = method => query = method;
+
+exports.connect_db = function connect_db(host, user, password){
+    con = mysql.createConnection({
+      host: host,
+      user: user,
+      password: password
+    });
+    con.connect(function(err) {
+      if (err) throw err;
+      console.log("Connected!");
+    });
+    var sel = "USE webtech;";
+    con.query(sel, function (err, result) {
+      if (err) throw err;
+    })
+    query = util.promisify(con.query).bind(con);
+    return query;
+  }
 
 async function INSERT(table,colnames,values,ignore){
     if (ignore==undefined){
