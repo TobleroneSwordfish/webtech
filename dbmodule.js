@@ -4,7 +4,6 @@ let util = require('util');
 
 var query;
 var con;
-// exports.setQueryMethod = method => query = method;
 
 exports.connect_db = function connect_db(host, user, password){
     con = mysql.createConnection({

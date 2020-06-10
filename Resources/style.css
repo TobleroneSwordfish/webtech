@@ -157,7 +157,7 @@ a {
     height:80%;
 }
 
-ul.user-navbar {
+ul.navbar {
     background-color: #666699;
     z-index: 2001;
     list-style-type: none;
@@ -169,13 +169,13 @@ ul.user-navbar {
     left:0;
     width:100%;
 }
-ul.user-navbar li {
+ul.navbar li {
     margin: 0;
     padding: 0;
     width: 33.333333%;
     float: left;
 } 
-ul.user-navbar li a {
+ul.navbar li a {
     padding: 14px 16px;
     text-align: center;
     display:block;
@@ -185,42 +185,14 @@ ul.user-navbar li a {
     font-family: Arial, Helvetica, sans-serif;
     text-decoration: none;
 }
-ul.user-navbar li a:hover {
+ul.navbar li a:hover {
     background-color: rgb(187, 121, 209);
 }
 
-ul.admin-navbar {
-    background-color: #666699;
-    z-index: 2001;
-    list-style-type: none;
-    margin: 0;
-    padding: 0;
-    display:inline-block;
-    position: sticky;
-    top:0;
-    left:0;
-    width:100%;
-}
+
 ul.admin-navbar li {
-    margin: 0;
-    padding: 0;
     width: 25%;
-    float: left;
 } 
-ul.admin-navbar li a {
-    margin:0;
-    padding: 14px 16px;
-    text-align: center;
-    display:block;
-    background-color: #666699;
-    color:white;
-    font-size: large;
-    font-family: Arial, Helvetica, sans-serif;
-    text-decoration: none;
-}
-ul.admin-navbar li a:hover {
-    background-color: darkseagreen;
-}
 
 .logo-left {
     transform-origin: top left;
@@ -446,7 +418,7 @@ ul.admin-navbar li a:hover {
     background-color: #666699;
 }
 .nav-button:hover {
-    background-color: darkseagreen;
+    background-color: rgb(187, 121, 209);;
 }
 .logout-button{
     width: 50%;

@@ -1,6 +1,6 @@
 $declare(navbar){
     $if(!session.admin){
-        <ul class="user-navbar" id="navbar">
+        <ul class="navbar" id="navbar">
         <li><a href="/">Home</a></li>
         <li><a href="/fanart">Fanart</a></li>
         <li>
@@ -24,7 +24,7 @@ $declare(navbar){
         </li>
         </ul>
     }else{
-        <ul class="admin-navbar horizontal" id="navbar">
+        <ul class="navbar admin-navbar horizontal" id="navbar">
             <li><a href="/">Home</a></li>
             <li><a href="/fanart">Fanart</a></li>
             <li><a href="/admin">Admin</a></li>
