@@ -597,8 +597,9 @@ async function parse_fanart(err, fields, files, request) {
   log("Files uploaded " + JSON.stringify(files));
   var mimetype = mime.contentType(files.filename.name);
   if (["image/jpeg", "image/png", "image/bmp"].indexOf(mimetype) != -1) {
-    var filename = files.filename.path + "." + files.filename.name.split(".").pop();
-    await fs.rename(files.filename.path, filename, (err) => {if (err) throw err;});
+    var filepath = files.filename.path + "." + files.filename.name.split(".").pop();
+    await fs.rename(files.filename.path, filepath, (err) => {if (err) throw err;});
+    var filename = filepath.split(path.sep).pop()
     loadArt(filename);
     storeArt(filename, false, await get_user_id(request.session.username));
   }
