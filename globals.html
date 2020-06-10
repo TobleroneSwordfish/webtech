@@ -6,7 +6,7 @@ $declare(navbar){
         <li>
         $if(session.loggedin){
             <form action="/logout" method="post" class="center nav-button"> Logged in as $escape{session.username}
-            <input type="submit" value="Logout" class="logout-button"></input>
+            <input type="submit" value="Logout" class="logout-button">
             </form>
         }else{
         <a class="popup" id="loginPopup">Login
@@ -30,7 +30,7 @@ $declare(navbar){
             <li><a href="/admin">Admin</a></li>
             <li>
             <form action="/logout" method="post" class="center nav-button"> Logged in as $escape{session.username}
-                <input type="submit" value="Logout" class="logout-button"></input>
+                <input type="submit" value="Logout" class="logout-button">
             </form>
             </li>
         </ul>
