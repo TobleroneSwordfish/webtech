@@ -190,6 +190,7 @@ ${navbar}
   var search=false;
   document.getElementById("changeTable").addEventListener('click', function(){
     updateFactions()
+    search=false;
     fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
   })
 
@@ -204,6 +205,7 @@ ${navbar}
   for (let id in colnames){
       document.getElementById(id).addEventListener('click', function(){
         selectedid=id;
+        search=false;
         fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
       })
     }
