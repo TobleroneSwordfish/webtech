@@ -108,7 +108,6 @@ ${navbar}
     var expandTag = tags[0];
     var expandedTag = tags[1]
     var contractTag = tags[2];
-    console.log(tags);
     //make sure no other logo is expanded or currently animating
     const checkActive = (logo) => !logo.classList.contains(expandTag) && !logo.classList.contains(contractTag) && !logo.classList.contains(expandedTag)
 
@@ -136,7 +135,6 @@ ${navbar}
     var expandTag = tags[0];
     var expandedTag = tags[1]
     var contractTag = tags[2];
-    // console.log(event);
     if (this.classList.contains(contractTag)) {
       this.classList.remove(contractTag);
       this.classList.remove("expanding");
@@ -145,28 +143,6 @@ ${navbar}
     if (this.classList.contains(expandTag)) {
       this.classList.remove(expandTag);
       this.classList.add(expandedTag);
-    }
-  }
-
-  $if(!session.loggedin){
-    document.body.addEventListener("click",toggleOffPopup,false);
-
-    function toggleOffPopup() {
-      var popup=document.getElementById('loginPopupText');
-        if (popup.classList.contains("show")){
-          popup.classList.toggle("show");
-        }
-    }
-
-    document.getElementById("loginPopup").addEventListener("click",togglePopup);
-    function togglePopup() {
-      var popup = document.getElementById("loginPopupText");
-      popup.classList.toggle("show");
-    }
-    document.getElementById('loginPopup').addEventListener('click',stopPropagation, true);
-    function stopPropagation(ev) {
-      console.log("called stoppropagation")
-      ev.stopPropagation();
     }
   }
 
@@ -220,15 +196,12 @@ ${navbar}
   function updateFactions(){
     selectedFactions=[]
     for (var f in factions){
-      console.log(f)
       if (document.getElementById(factions[f]).checked){
         selectedFactions.push(f)
       }
     }
-    console.log(selectedFactions)
   }
   for (let id in colnames){
-      console.log(id)
       document.getElementById(id).addEventListener('click', function(){
         selectedid=id;
         fetch("/api/" + selectedid + "?count=" + count+"&factions="+selectedFactions.toString()).then(handleTable);
@@ -237,18 +210,14 @@ ${navbar}
   var dropdown = document.getElementById("count");
   dropdown.addEventListener('change', function(){
     count=dropdown.options[dropdown.selectedIndex].value;
-    console.log(count)
     // fetch("/api/" + selectedid + "?count=" + count +"&factions="+selectedFactions.toString()).then(handleTable);
   })
   fetch("/api/").then(handleTable);
   function handleTable(response) {
-    console.log("hello")
     response.text().then(fillTable)
   }
   function fillTable(data) {
-    console.log("filltable called")
     resetTable();
-    console.log(data)
     document.getElementById(selectedid).classList.add("selected");
     data = data.split("null").join(0)
     var obj = JSON.parse(data);
@@ -256,9 +225,7 @@ ${navbar}
     table.appendChild(document.createElement('tbody'));
     var table = document.getElementById("playerstats").getElementsByTagName("tbody")[0];
     for (var u in obj){
-      // console.log(u)
       var row = table.insertRow(-1);
-      console.log(obj[u]["faction_id"])
       row.classList.add(factions[obj[u]["faction_id"]])
       var cell = row.insertCell(-1);
       cell.innerHTML = parseInt(u)+1;
@@ -269,7 +236,6 @@ ${navbar}
           cell.classList.add("selected");
         }
         if (p=="faction_id"){
-          console.log("p ")
           cell.innerHTML = factions[obj[u][p]];
         }
       }
@@ -292,11 +258,8 @@ ${navbar}
 
   function parse(str){
     str=str.split(" ").join("");
-    // console.log(str);
     str=str.split("(").join("");
-    // console.log(str);
     str=str.split(")").join("");
-    // console.log(str);
     return str.split(",");
   }
 </script>
