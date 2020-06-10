@@ -1,7 +1,7 @@
 <ul>
     <li>A for HTML</li>
-    <li>B for CSS</li>
-    <li>B for JS</li>
+    <li>A for CSS</li>
+    <li>A+ for JS</li>
     <li>A for PNG</li>
     <li>A for SVG</li>
     <li>B for Server</li>
@@ -14,15 +14,20 @@
     <p>
         HTML: We have a number of pages. The index page displays a dynamic table of player statistics, the contents of which can be altered by the client based on a number of input elements (dropdown, tickboxes, textfield).
         The fanart page displays pictures submitted by users and approved by admins. There is a comment system where users can post comments on pictures as well as reply to others' comments.
-        Admins can also access a page where they can approve artwork through the fanart page. Additionally there is an admin page 
+        Admins can also access a page where they can approve artwork through the fanart page. Additionally there is an admin page where an admin can see all users and delete them in a pop-up window.
+        The table of users in the admin page has multiple pages that can be navigated using hyperlink buttons at the bottom of the table, and the number of elements in the table can be changed through a dropdown menu.
+        Finally, there is a nav-bar which is dynamically added to every page and lets users access the pages. This includes a login popup with a form (if the user is not logged in) or a logout button otherwise.
         They have all been validated using an HTML validator (http://users.skynet.be/mgueury/mozilla/)
     </p>
     <p>
-        CSS: We have stylesheets, animations and no inline styling in the HTML file.
+        CSS: We have stylesheets, animations in the index page and no inline styling in the HTML file. We have used css to tessalate a background picture, style buttons, hide or show overflow, make pop-ups and tooltips etc.
+        The table in the index page is styled with css dynamically with js at runtime. The rows are colored based on the faction the player belongs in, and hovering over a row changes is color for ease of reading across the row.
     </p>
     <p>
         JS: We are using client side JS to fetch data from the server at runtime and display it on the page as well as establishing a websocket connection with the
-        server to receive notifications.
+        server to receive notifications. We also use it to dynamically change styling of html elements, and generate tables from the received data including splitting it into pages. 
+        Eg: clicking on a table column requests data from the server sorted by that column name and sets the styling of that column to be dark to indicate it has been selected.
+        Js also supports the CSS animation on the index page's SVG logos.
     </p>
     <p>
         PNG: We used Gimp to make some fanart for the game. We used filters, frames, layers, transparency, and drew with a couple weird brushes and combined images.
